@@ -295,69 +295,83 @@ TVVARSS.ml(par = par, X = tX, U = tU, par.fixed = par.fixed)
 
 library(Rcpp)
 library(RcppArmadillo)
+# 
+# set.seed(0)
+# x <- matrix(rnorm(25), nrow = 5)
+# y <- matrix(rnorm(5), nrow = 5)
+# system.time(replicate(1e3, solve(x)))
+# system.time(replicate(1e3, cpp_solve(x)))
+# 
+# system.time(replicate(10000, determinant(x)$modulus[1]))
+# system.time(replicate(10000, cpp_log_det(x)))
+# 
+# system.time(replicate(1000, kronecker(x, y)))
+# system.time(replicate(1000, cpp_kron(x, y)))
+# 
+# cpp_mmult(x,y)
+# x %*% y
+
+# ~~~~~~~~~~~~~~~~
+# Things changed:
+# ~~~~~~~~~~~~~~~~
+# Input U as matrix() instead of NULL
+
+
 sourceCpp('TVVARSS.cpp')
-
-set.seed(0)
-x <- matrix(rnorm(25), nrow = 5)
-y <- matrix(rnorm(5), nrow = 5)
-system.time(replicate(1e3, solve(x)))
-system.time(replicate(1e3, cpp_solve(x)))
-
-system.time(replicate(10000, determinant(x)$modulus[1]))
-system.time(replicate(10000, cpp_log_det(x)))
-
-system.time(replicate(1000, kronecker(x, y)))
-system.time(replicate(1000, cpp_kron(x, y)))
-
-cpp_mmult(x,y)
-x %*% y
-
-
-
-{cpp_code <- 
-'arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
-
-arma::uword n = X.n_rows;
-arma::uword Tmax = X.n_cols;
-
-arma::vec par_full = par_fixed;
-arma::uvec par_nas = arma::find_nonfinite(par_fixed);
-par_full.elem(par_nas) = par;
-// set up coefficient matrices
-
-arma::mat B0;
-B0.insert_cols(0, par_full.subvec(1,n));
-B0.reshape(n, 1);
-
-arma::mat B;
-B.insert_cols(0, par_full.subvec((n+1), (n+n^2)));
-// byrow = TRUE)
-B.reshape(n, n);
-
-// B0 <- matrix(par.full[1:n], nrow=n, ncol=1)
-// B <- matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE)
-// Se <- diag(par.full[(n+n^2+1):(n+n^2+n)]^2)
-// Su <- diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)	
-// Sb <- diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2)
-
-return(0);
-}'}
-# cat(cpp_code)
-
-cppFunction(code = cpp_code, depends = "RcppArmadillo")
-
 
 cpp_test(par, t(X), t(U), par.fixed)
 
 par.full <- par.fixed
 par.full[is.na(par.fixed)] <- par
-matrix(par.full[(2+1):(2+2^2)], nrow=2, ncol=2, byrow = TRUE)
 
+
+# Se
+diag(par.full[(n+n^2+1):(n+n^2+n)]^2)
+# Su
+diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)
+# Sb
+diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2)
+
+# C
+matrix(par.full[(n+n^2+n+n+n*(n+1)+1):(n+n^2+n+n+n*(n+1)+nu*n)], nrow=n, ncol=nu, byrow = TRUE)
+
+# S
+# as.matrix(rbind(cbind(Se, matrix(0, n, n*(n+1))), 
+#                 cbind(matrix(0, n*(n+1), n), Sb)))
+as.matrix(rbind(cbind(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), 
+                      matrix(0, n, n*(n+1))),
+                cbind(matrix(0, n*(n+1), n), 
+                      diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2))))
+
+# Z
+as.matrix(cbind(diag(n), matrix(0, n, n*(n+1))))
+
+# x
+t(X)[,1]
+
+# Check "If the initial parameter values imply a stationary distribution..."
+max(abs(eigen(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))$values))
+
+# PP
+matrix(solve(diag(n*n)-kronecker(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE),matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))) %*% matrix(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), nrow = n*n), n, n)
+
+# PP after manipulation
+as.matrix(rbind(cbind(matrix(solve(diag(n*n)-kronecker(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE),matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))) %*% matrix(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), nrow = n*n), n, n), matrix(0, n, n*(n+1))), 
+                cbind(matrix(0, n*(n+1), n), diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2))))
 
 
 
 
 # 
+
+
+
+
+
+
+
+
+
 
 
 
