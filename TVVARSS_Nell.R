@@ -40,9 +40,12 @@ X[,1] <- (X[,1] - mean(X[,1]))/sd(X[,1])
 X[,2] <- (X[,2] - mean(X[,2]))/sd(X[,2])
 
 
+set.seed(8); U <- cbind(U, U * rnorm(100))
 nu <- if (is.null(ncol(U))) 1 else ncol(U)
-U <- matrix(U, ncol = 1)
 # plot(X ~ U)
+
+
+
 
 # =================
 # Defined as arguments
@@ -167,9 +170,6 @@ par <- par.full[is.na(par.fixed)]
 
 
 
-tX <- t(X)
-tU <- t(U)
-
 
 
 
@@ -190,7 +190,7 @@ TVVARSS.ml <- function(par, X, U, par.fixed) {
     B0 <- matrix(par.full[1:n], nrow=n, ncol=1)
     B <- matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE)
     Se <- diag(par.full[(n+n^2+1):(n+n^2+n)]^2)
-    Su <- diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)	
+    Su <- diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)
     Sb <- diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2)
     
     # set up independent variable
@@ -317,9 +317,8 @@ library(RcppArmadillo)
 # Input U as matrix() instead of NULL
 
 
-sourceCpp('TVVARSS.cpp')
-
-cpp_test(par, t(X), t(U), par.fixed)
+# sourceCpp('TVVARSS.cpp')
+# cpp_test(par, t(X), t(U), par.fixed)
 
 par.full <- par.fixed
 par.full[is.na(par.fixed)] <- par
@@ -333,18 +332,18 @@ diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)
 diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2)
 
 # C
-matrix(par.full[(n+n^2+n+n+n*(n+1)+1):(n+n^2+n+n+n*(n+1)+nu*n)], nrow=n, ncol=nu, byrow = TRUE)
+C = matrix(par.full[(n+n^2+n+n+n*(n+1)+1):(n+n^2+n+n+n*(n+1)+nu*n)], nrow=n, ncol=nu, byrow = TRUE); C
 
 # S
 # as.matrix(rbind(cbind(Se, matrix(0, n, n*(n+1))), 
 #                 cbind(matrix(0, n*(n+1), n), Sb)))
-as.matrix(rbind(cbind(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), 
+S = as.matrix(rbind(cbind(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), 
                       matrix(0, n, n*(n+1))),
                 cbind(matrix(0, n*(n+1), n), 
                       diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2))))
 
 # Z
-as.matrix(cbind(diag(n), matrix(0, n, n*(n+1))))
+Z = as.matrix(cbind(diag(n), matrix(0, n, n*(n+1)))); Z
 
 # x
 t(X)[,1]
@@ -356,13 +355,60 @@ max(abs(eigen(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))$val
 matrix(solve(diag(n*n)-kronecker(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE),matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))) %*% matrix(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), nrow = n*n), n, n)
 
 # PP after manipulation
-as.matrix(rbind(cbind(matrix(solve(diag(n*n)-kronecker(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE),matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))) %*% matrix(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), nrow = n*n), n, n), matrix(0, n, n*(n+1))), 
+PP0 = as.matrix(rbind(cbind(matrix(solve(diag(n*n)-kronecker(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE),matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))) %*% matrix(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), nrow = n*n), n, n), matrix(0, n, n*(n+1))), 
                 cbind(matrix(0, n*(n+1), n), diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2))))
+
+
+# BB
+B12 <- diag(n) - matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE)
+B13 <- kronecker(t(t(X)[,1]-matrix(par.full[1:n], nrow=n, ncol=1)),diag(n))
+
+BB = as.matrix(rbind(cbind(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE), B12, B13), 
+                      cbind(matrix(0, n, n), diag(n), matrix(0, n, n^2)), 
+                      cbind(matrix(0, n^2, 2*n), diag(n^2))))
+
+
+# PP after BB creation
+PP = BB %*% PP0 %*% t(BB) + S
+
+# x after first iteration of for loop
+# B0 + B %*% (x-B0) + C * U[t]
+# # B0 + B %*% (x-B0) + C %*% U[,t]
+x0 = matrix(par.full[1:n], nrow=n, ncol=1) + matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE) %*% (as.matrix(t(X)[,1]) - matrix(par.full[1:n], nrow=n, ncol=1)) + C %*% as.matrix(t(U)[,2])
+
+B0_0 <- matrix(par.full[1:n], nrow=n, ncol=1)
+B_0 <- matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE)
+
+FF <- Z %*% PP %*% t(Z) + diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)
+invF <- solve(FF)
+
+y0 <- matrix(c(x0, B0_0, t(B_0)), ncol=1)
+v <- as.matrix(t(X)[,2]) - Z %*% y0
+y <- y0 + PP %*% t(Z) %*% invF %*% v
+
+
+
+sourceCpp('TVVARSS.cpp')
+# cpp_test(par, t(X), t(U), par.fixed)
+system.time(replicate(100, cpp_TVVARSS_ml(par, t(X), t(U), par.fixed)))
+system.time(replicate(100, TVVARSS.ml(par = par, X = tX, U = tU, par.fixed = par.fixed)))
+
+
+
+
+
 
 
 
 
 # 
+
+
+
+
+
+
+
 
 
 

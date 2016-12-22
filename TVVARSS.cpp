@@ -61,9 +61,27 @@ arma::mat cpp_mmult(arma::mat x, arma::mat y) {
 
 // [[Rcpp::export]]
 arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
+    arma::uword t = 0;
+    arma::mat Z = arma::zeros(10);
+    if(!X.col(t).has_nan()){
+        return(Z);
+    } else {
+        return(X);
+    }
+}
+
+// [[Rcpp::export]]
+arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
     
+    // Note: X and U are transposed, so time runs through columns
     arma::uword n = X.n_rows;
     arma::uword Tmax = X.n_cols;
+    
+    // Identity matrix of size n by n
+    arma::mat n_ident = arma::eye<arma::mat>(n,n);
+    // And for n^2 by n^2
+    arma::sword n2 = std::pow(n,2);
+    arma::mat n2_ident = arma::eye<arma::mat>(n2,n2);
     
     arma::vec par_full = par_fixed;
     arma::uvec par_nas = arma::find_nonfinite(par_fixed);
@@ -79,16 +97,15 @@ arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed)
     
     arma::mat B = arma::zeros(n, n);
     arma::uword j = n;
-    arma::mat row;
+    arma::mat row_iter;
     for(arma::uword i=0; i<n; ++i) {
-        row = par_full.subvec(j, (j + n - 1));
-        row.reshape(1,n);
-        B.row(i) = row;
+        row_iter = par_full.subvec(j, (j + n - 1));
+        row_iter.reshape(1,n);
+        B.row(i) = row_iter;
         j += n;
     }
     
     arma::uword N;
-    arma::sword n2 = std::pow(n,2);
     
     arma::vec Se_vec = par_full.subvec((n+n2),(n+n2+n-1));
     N = Se_vec.n_elem;
@@ -115,17 +132,16 @@ arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed)
     // =============
     // set up independent variable
     // =============
-    arma::uword nu;
+    arma::uword nu = U.n_rows;
     arma::mat C;
     
     if(U.n_cols > 1) {
-        nu = U.n_rows;
         C = arma::zeros(n, nu);
         j = (n+n2+n+n+n*(n+1));
         for(arma::uword i=0; i<n; ++i) {
-            row = par_full.subvec(j, (j + nu - 1));
-            row.reshape(1,nu);
-            C.row(i) = row;
+            row_iter = par_full.subvec(j, (j + nu - 1));
+            row_iter.reshape(1,nu);
+            C.row(i) = row_iter;
             j += nu;
         }
     }
@@ -137,8 +153,7 @@ arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed)
     S_temp = arma::join_rows(S_temp, Sb);
     S = arma::join_cols(S, S_temp);
     
-    arma::mat Z;
-    Z = arma::join_rows(arma::eye<arma::mat>(n,n), arma::zeros(n, n*(n+1)));
+    arma::mat Z = arma::join_rows(n_ident, arma::zeros(n, n*(n+1)));
     
     // =============
     // Initial unconditional values
@@ -150,12 +165,9 @@ arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed)
     // If the initial parameter values imply a stationary distribution, then the initial
     // covariance matrix of the process error, PP, is computed from the coefficients. If 
     // not, the initial value of PP given by the covariance matrix of the process error
-    // variation (effectively assuming that the dominant eigenvalue of the system is zero).
-    
-    // double std::abs(y)
-
+    // variation (effectively assuming that the dominant eigenvalue of the system is 
+    // zero).
     arma::cx_vec eigval = arma::eig_gen(B);
-    
     arma::vec eig_reals = arma::zeros(eigval.n_elem);
     double eig_real_i;
     for(arma::uword i=0; i<(eigval.n_elem); ++i){
@@ -170,71 +182,86 @@ arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed)
     if(max(eig_reals) < 1){
         PP_k = cpp_kron(B,B);
         PP_Se.reshape(n*n,1);
-        PP_dm = arma::eye<arma::mat>(n2,n2);
-        PP = cpp_solve(PP_dm - PP_k);
+        PP_dm = n2_ident;
+        PP = arma::inv(PP_dm - PP_k);
         PP = PP * PP_Se;
         PP.reshape(n, n);
     } else {
         PP = Se;
     }
     
-    PP = join_rows(PP, arma::zeros(n, n*(n+1)));
-    arma::mat PP_Sb = join_rows(arma::zeros(n*(n+1), n), Sb);
-    PP = join_cols(PP, PP_Sb);
+    PP = arma::join_rows(PP, arma::zeros(n, n*(n+1)));
+    arma::mat PP_Sb = arma::join_rows(arma::zeros(n*(n+1), n), Sb);
+    PP = arma::join_cols(PP, PP_Sb);
     
     double logFt = 0;
-    double vFv = 0;
+    arma::mat vFv = arma::zeros(1,1);
     
+    arma::mat BB;
+    arma::mat B12;
+    arma::mat B13;
+    arma::mat BB_temp;
+    arma::mat FF;
+    arma::mat invF;
+    arma::mat y;
+    arma::mat v;
+    for(arma::uword t=1; t<Tmax; ++t){
+        // PREDICTION EQUATIONS
+        B12 = n_ident - B;
+        B13 = x - B0;
+        B13 = cpp_kron(B13.t(), n_ident);
+        BB = arma::join_rows(B, B12);
+        BB = arma::join_rows(BB, B13);
+        BB_temp = arma::join_rows(arma::zeros(n, n), n_ident);
+        BB_temp = arma::join_rows(BB_temp, arma::zeros(n, n2));
+        BB = arma::join_cols(BB, BB_temp);
+        BB = arma::join_cols(BB, arma::join_rows(arma::zeros(n2, 2*n), n2_ident));
+        PP = BB * PP * BB.t() + S;
+        if(U.n_cols < 2) {
+            x = B0 + B * (x - B0);
+        } else {
+            if (nu == 1) {
+                x = B0 + B * (x - B0) + C * U(0,t);
+            } else {
+                x = B0 + B * (x - B0) + C * U.col(t);
+            }
+        }
+        
+        // UPDATING EQUATIONS
+        
+        if(!X.col(t).has_nan()){
+            FF = Z * PP * Z.t() + Su;
+            invF = arma::inv(FF);
+            y = arma::join_cols(arma::vectorise(x), arma::vectorise(B0));
+            y = arma::join_cols(y, arma::vectorise(B.t()));
+            v = X.col(t) - Z * y;
+            
+            y = y + PP * Z.t() * invF * v;
+            PP = PP - PP * Z.t() * invF * Z * PP;
+            
+            x = y.rows(0,(n-1));
+            B0 = y.rows(n, (2*n-1));
+            B = arma::zeros(n,n);
+            j = 2*n;
+            for(arma::uword i=0; i<n; ++i) {
+                row_iter = y.rows(j,(j+n-1));
+                row_iter.reshape(1,n);
+                B.row(i) = row_iter;
+                j += n;
+            }
+
+            // TERMS OF LIKELIHOOD FUNCTION
+
+            double logdetFF = cpp_log_det(FF);
+            logFt += logdetFF;
+            vFv = vFv + v.t() * invF * v;
+        }
+    }
     
-    
-//     for(t in 2:Tmax) {
-//         
-// # PREDICTION EQUATIONS
-//         
-//         B12 <- diag(n) - B
-//             B13 <- kronecker(t(x-B0),diag(n))
-//             
-//             BB <- as.matrix(rbind(cbind(B, B12, B13), 
-//                                   cbind(matrix(0, n, n), diag(n), matrix(0, n, n^2)), 
-//                                   cbind(matrix(0, n^2, 2*n), diag(n^2))))
-//             PP <- BB %*% PP %*% t(BB) + S
-//             
-//             if (is.null(U)){
-//                 x <- B0 + B %*% (x-B0)
-//             } else {				
-//                 if (nu == 1) {
-//                     x <- B0 + B %*% (x-B0) + C * U[t]
-//                 } else {
-//                     x <- B0 + B %*% (x-B0) + C %*% U[,t]
-//                 }
-//             }
-//             
-// # UPDATING EQUATIONS
-//             if(!any(is.na(X[,t]))){
-//                 
-//                 FF <- Z %*% PP %*% t(Z) + Su
-//                 invF <- solve(FF)
-//                 
-//                 y <- matrix(c(x, B0, t(B)), ncol=1)		
-//                 v <- X[,t] - Z %*% y
-//                 
-//                 y <- y + PP %*% t(Z) %*% invF %*% v
-//                 PP <- PP - PP %*% t(Z) %*% invF %*% Z %*% PP
-//                 
-//                 x <- y[1:n]
-//                 B0 <- y[(n+1):(2*n)]
-//                 B <- matrix(y[(2*n+1):length(y)], nrow=n, ncol=n, byrow = TRUE)
-//                 
-// # TERMS OF LIKELIHOOD FUNCTION
-//                 
-// # "determinant(FF)$modulus[1]" gives the log of the determinant by default
-//                 logdetFF <- determinant(FF)$modulus[1]
-//                 logFt <- logFt + logdetFF
-//                     
-//                     vFv <- vFv + t(v) %*% invF %*% v
-//             }
-//     }
-    
-    return(PP);
+    arma::mat LL = logFt + vFv;
+    // if (is.complex(LL)) {
+    //     LL <- 10^10
+    // }
+    return(LL);
 }
 
