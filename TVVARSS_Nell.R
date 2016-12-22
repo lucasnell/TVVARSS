@@ -299,19 +299,59 @@ sourceCpp('TVVARSS.cpp')
 
 set.seed(0)
 x <- matrix(rnorm(25), nrow = 5)
-y <- matrix(0.5, nrow = 1)
+y <- matrix(rnorm(5), nrow = 5)
 system.time(replicate(1e3, solve(x)))
 system.time(replicate(1e3, cpp_solve(x)))
 
 system.time(replicate(10000, determinant(x)$modulus[1]))
 system.time(replicate(10000, cpp_log_det(x)))
 
-system.time(replicate(1e3, kronecker(x, y)))
-system.time(replicate(1e3, cpp_kron(x, y)))
+system.time(replicate(1000, kronecker(x, y)))
+system.time(replicate(1000, cpp_kron(x, y)))
+
+cpp_mmult(x,y)
+x %*% y
 
 
 
+{cpp_code <- 
+'arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
 
+arma::uword n = X.n_rows;
+arma::uword Tmax = X.n_cols;
+
+arma::vec par_full = par_fixed;
+arma::uvec par_nas = arma::find_nonfinite(par_fixed);
+par_full.elem(par_nas) = par;
+// set up coefficient matrices
+
+arma::mat B0;
+B0.insert_cols(0, par_full.subvec(1,n));
+B0.reshape(n, 1);
+
+arma::mat B;
+B.insert_cols(0, par_full.subvec((n+1), (n+n^2)));
+// byrow = TRUE)
+B.reshape(n, n);
+
+// B0 <- matrix(par.full[1:n], nrow=n, ncol=1)
+// B <- matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE)
+// Se <- diag(par.full[(n+n^2+1):(n+n^2+n)]^2)
+// Su <- diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)	
+// Sb <- diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2)
+
+return(0);
+}'}
+# cat(cpp_code)
+
+cppFunction(code = cpp_code, depends = "RcppArmadillo")
+
+
+cpp_test(par, t(X), t(U), par.fixed)
+
+par.full <- par.fixed
+par.full[is.na(par.fixed)] <- par
+matrix(par.full[(2+1):(2+2^2)], nrow=2, ncol=2, byrow = TRUE)
 
 
 
