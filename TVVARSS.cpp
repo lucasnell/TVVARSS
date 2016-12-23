@@ -15,29 +15,8 @@ using namespace arma;
 //   http://gallery.rcpp.org/
 //
 
-// [[Rcpp::export]]
-NumericVector timesTwo(NumericVector x) {
-  return x * 2;
-}
 
-
-// You can include R code blocks in C++ files processed with sourceCpp
-// (useful for testing and development). The R code will be automatically 
-// run after the compilation.
-//
-// 
-// /*** R
-// timesTwo(42)
-// */
-
-
-// [[Rcpp::export]]
-arma::mat cpp_solve(arma::mat x) {
-    arma::mat y = inv(x);
-    return(y);
-}
-
-
+// Same as `determinant(FF)$modulus[1]` in R
 // [[Rcpp::export]]
 double cpp_log_det(arma::mat x) {
     double y = arma::det(x);
@@ -45,30 +24,6 @@ double cpp_log_det(arma::mat x) {
     return(std::log(z));
 }
 
-
-// [[Rcpp::export]]
-arma::mat cpp_kron(arma::mat x, arma::mat y) {
-    arma::mat z = arma::kron(x, y);
-    return(z);
-}
-
-// [[Rcpp::export]]
-arma::mat cpp_mmult(arma::mat x, arma::mat y) {
-    arma::mat z = x * y;
-    return(z);
-}
-
-
-// [[Rcpp::export]]
-arma::mat cpp_test(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
-    arma::uword t = 0;
-    arma::mat Z = arma::zeros(10);
-    if(!X.col(t).has_nan()){
-        return(Z);
-    } else {
-        return(X);
-    }
-}
 
 // [[Rcpp::export]]
 arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
@@ -180,7 +135,7 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     arma::mat PP_Se = Se;
     arma::mat PP_dm;
     if(max(eig_reals) < 1){
-        PP_k = cpp_kron(B,B);
+        PP_k = arma::kron(B,B);
         PP_Se.reshape(n*n,1);
         PP_dm = n2_ident;
         PP = arma::inv(PP_dm - PP_k);
@@ -209,7 +164,7 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         // PREDICTION EQUATIONS
         B12 = n_ident - B;
         B13 = x - B0;
-        B13 = cpp_kron(B13.t(), n_ident);
+        B13 = arma::kron(B13.t(), n_ident);
         BB = arma::join_rows(B, B12);
         BB = arma::join_rows(BB, B13);
         BB_temp = arma::join_rows(arma::zeros(n, n), n_ident);
