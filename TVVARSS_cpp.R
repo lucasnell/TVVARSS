@@ -5,7 +5,6 @@ sourceCpp('TVVARSS.cpp')
 
 
 
-# comment
 
 cpp_TVVARSS <- function(X, U = NULL, B0.start = matrix(NA, nrow=n, ncol=1), B.start = matrix(NA, nrow=n, ncol=n), se.start = matrix(NA, nrow=n, ncol=1), su.start = matrix(0.001, nrow=n, ncol=1), Sb0.start = matrix(0.1, nrow=n, ncol=1), Sb.start = matrix(0.1, nrow=n, ncol=n), C.start = if(is.null(U)) NULL else matrix(0.1, nrow=n, ncol=ncol(U)), B0.fixed = matrix(NA, nrow=n, ncol=1), B.fixed = matrix(NA, nrow=n, ncol=n), se.fixed = matrix(NA, nrow=n, ncol=1), su.fixed = matrix(NA, nrow=n, ncol=1), Sb0.fixed = matrix(NA, nrow=n, ncol=1), Sb.fixed = matrix(NA, nrow=n, ncol=n), C.fixed = if(is.null(U)) NULL else matrix(NA, nrow=n, ncol=ncol(U)), Tsamplefract = .5, annealing = T, method = 'Nelder-Mead', show.fig = T, maxit.optim = 10^5, maxit.SANN = 10^2, optim.control = NULL, optim.bobyqa.control = NULL, optim.SANN.control = NULL) {
     
