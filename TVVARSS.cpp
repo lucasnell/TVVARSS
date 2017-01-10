@@ -26,8 +26,7 @@ double cpp_log_det(arma::mat x) {
 // Same as `matrix(x, byrow = TRUE)` in R
 arma::mat mat_byrow(arma::vec x, arma::uword nrow, arma::uword ncol) {
     if(x.n_elem != (nrow * ncol)){
-        arma::mat M = arma::zeros(0);
-        return(M);
+        Rcpp::stop("Length of x != nrow * ncol");
     }
     arma::mat M = arma::zeros(nrow, ncol);
     arma::mat row_iter;
@@ -40,8 +39,6 @@ arma::mat mat_byrow(arma::vec x, arma::uword nrow, arma::uword ncol) {
     }
     return(M);
 }
-
-
 
 
 // [[Rcpp::export]]
