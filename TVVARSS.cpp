@@ -214,9 +214,16 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     }
     
     arma::mat LL = logFt + vFv;
-    // if (is.complex(LL)) {
-    //     LL <- 10^10
+    
+    // My attempt at including check for imaginary numbers
+    // arma::cx_mat LL_i = logFt + vFv;
+    // arma::mat LL = arma::zeros(1,1);
+    // if(LL_i(0,0).imag() != 0){
+    //     LL(0,0) = std::pow(10,10);
+    // } else {
+    //     LL = arma::real(LL_i);
     // }
+    
     return(LL);
 }
 

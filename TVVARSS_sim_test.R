@@ -1,8 +1,9 @@
-source('TVVARSS_forC_17Dec16.R')
+source('./initial_testing_files/TVVARSS_forC_17Dec16.R')
 source('TVVARSS_cpp.R')
 
 # simulation test of TVVARSS
 
+set.seed(79)
 Tmax <- 100
 n <- 2
 B0 <- matrix(c(1,1), nrow = n, ncol = 1)
@@ -25,16 +26,30 @@ par(mfrow=c(1,1))
 matplot(X, typ="l")
 
 # quartz()
-# zNM <- TVVARSS(X, Tsamplefract = .9, method="Nelder-Mead", show.fig = T, annealing = T)
-# 12.5 minutes
+# Takes ~30 min with annealing, ~1.5 min without
+# set.seed(1)
+# zNM <- TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
+#                annealing = FALSE)
+#                #annealing = TRUE)
+# 
+# # Takes ~1.5 min with annealing, ~2 min without
+# set.seed(1)
+# cpp_zNM <- cpp_TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
+#                        annealing = FALSE)
+#                        #annealing = TRUE)
+# system2('say', 'R script finished')
+# system2('terminal-notifier',"-message Done -title Script")
+# 
+# 
+# 
+# save(zNM, cpp_zNM, file = 'TVVARSS.RData')
+# load('TVVARSS.RData')
+
+# save(zNM, cpp_zNM, file = 'TVVARSS_no_annealing.RData')
+load('TVVARSS_no_annealing.RData')
 
 
-t1 <- Sys.time()
-cpp_zNM <- cpp_TVVARSS(X, Tsamplefract = .9, method="Nelder-Mead", show.fig = F, annealing = T)
-t2 <- Sys.time()
-t2 - t1
-# summary(zNM)
-# summary(cpp_zNM)
+all.equal(zNM, cpp_zNM)
 
 
 
@@ -43,6 +58,24 @@ t2 - t1
 
 
 
+
+
+
+
+# Looking at how C++ manages complex numbers
+# library(Rcpp)
+# library(RcppArmadillo)
+# cppFunction(depends = 'RcppArmadillo', 
+#             code = 
+# "arma::cx_mat imag_test(arma::mat X){
+#     arma::cx_mat M = arma::randu<arma::cx_mat>(1,2);
+#     M(0,1) = X(0,0);
+#     arma::mat I = arma::imag(M);
+#     // arma::mat C = M;
+#     return(M);
+# }")
+# 
+# set.seed(9); imag_test(matrix(4+1i^9))
 
 
 

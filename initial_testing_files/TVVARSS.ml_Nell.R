@@ -5,6 +5,9 @@
 ## Copyright 2016 Anthony R. Ives
 
 
+library(Rcpp)
+library(RcppArmadillo)
+library(GenSA)
 
 
 set.seed(9)
@@ -272,18 +275,19 @@ TVVARSS.ml <- function(par, X, U, par.fixed) {
 
 
 
-system.time(replicate(100, TVVARSS.ml(par = par, X = tX, U = tU, par.fixed = par.fixed)))
+system.time(replicate(100, TVVARSS.ml(par = par, X = t(X), U = t(U), 
+                                      par.fixed = par.fixed)))
 #  user  system elapsed 
 # 1.860   0.015   1.880
-TVVARSS.ml(par = par, X = tX, U = tU, par.fixed = par.fixed)
+TVVARSS.ml(par = par, X = t(X), U = t(U), par.fixed = par.fixed)
 #          [,1]
-# [1,] 4437.277
+# [1,] 10960.63
+TVVARSS.ml(par = par, X = t(X), U = NULL, par.fixed = par.fixed)
+#          [,1]
+# [1,] 1618.454
 
 
 
-
-library(Rcpp)
-library(RcppArmadillo)
 # 
 # set.seed(0)
 # x <- matrix(rnorm(25), nrow = 5)
@@ -379,12 +383,143 @@ y <- y0 + PP %*% t(Z) %*% invF %*% v
 
 sourceCpp('TVVARSS.cpp')
 # cpp_test(par, t(X), t(U), par.fixed)
-system.time(replicate(100, cpp_TVVARSS_ml(par, t(X), t(U), par.fixed)))
-system.time(replicate(100, TVVARSS.ml(par = par, X = tX, U = tU, par.fixed = par.fixed)))
+# system.time(replicate(100, cpp_TVVARSS_ml(par, t(X), t(U), par.fixed)))
+# system.time(replicate(100, TVVARSS.ml(par = par, X = tX, U = tU, par.fixed = par.fixed)))
+
+
+# cpp_TVVARSS_ml(par = par, X = t(X), U = t(U), par_fixed = par.fixed)
+# #          [,1]
+# # [1,] 10960.63
+# TVVARSS.ml(par = par, X = t(X), U = t(U), par.fixed = par.fixed)
+# #          [,1]
+# # [1,] 10960.63
+# 
+# 
+# cpp_TVVARSS_ml(par = par, X = t(X), U = matrix(), par_fixed = par.fixed)
+# #          [,1]
+# # [1,] 1618.454
+# TVVARSS.ml(par = par, X = t(X), U = NULL, par.fixed = par.fixed)
+# #          [,1]
+# # [1,] 1618.454
+# 
+# 
+# t1 <- Sys.time()
+# R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), par.fixed = par.fixed, 
+#                  method = "Nelder-Mead", control = list(maxit = 10^5))
+# t2 <- Sys.time()
+# Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U), 
+#                     par_fixed = par.fixed, method = "Nelder-Mead", 
+#                     control = list(maxit = 10^5))
+# t3 <- Sys.time()
+# cat(paste(
+#     sprintf('R version took %s minutes', 
+#             round(as.numeric(t2 - t1, units = 'mins'), 2)),
+#     sprintf('Rcpp version took %s minutes', 
+#             round(as.numeric(t3 - t2, units = 'mins'), 2)), 
+#     sprintf('Are they equal? --> %s', all.equal(Rcpp_optim, R_optim)),
+#     sep = '\n'))
+# system2('say', 'R script finished')
 
 
 
+n <- ncol(X)
+maxit.SANN <- 10^2
+
+par.upper <- c(array(1, dim=n), array(2, dim=n^2), array(10, dim=n), array(10, dim=n),
+               array(10, dim=n*(n+1)))
+par.lower <- c(array(-1, dim=n), array(-2, dim=n^2), array(0, dim=n), array(0, dim=n),
+               array(0, dim=n*(n+1)))
+par.upper <- par.upper[is.na(par.fixed)]
+par.lower <- par.lower[is.na(par.fixed)]
+
+# Added by me to account for using U = NULL
+# Same reason I did head(par.fixed, -4) and head(par, -4) below
+par.upper <- head(par.upper, -4)
+par.lower <- head(par.lower, -4)
+
+
+# t1 <- Sys.time()
+# R_optSANN <- GenSA(fn = TVVARSS.ml, par = head(par, -4), lower = par.lower, 
+#                    upper = par.upper, 
+#                    X = t(X), U = NULL, par.fixed = head(par.fixed, -4), 
+#                    control=list(smooth = F, maxit = maxit.SANN))
+# # par <- optSANN$par
+# t2 <- Sys.time()
+# Rcpp_optSANN <- GenSA(fn = cpp_TVVARSS_ml, par = head(par, -4), lower = par.lower, 
+#                       upper = par.upper, 
+#                       X = t(X), U = matrix(), par_fixed = head(par.fixed, -4), 
+#                       control=list(smooth = F, maxit = maxit.SANN))
+# t3 <- Sys.time()
+# cat(paste(
+#     sprintf('R version took %s minutes', 
+#             round(as.numeric(t2 - t1, units = 'mins'), 2)),
+#     sprintf('Rcpp version took %s minutes', 
+#             round(as.numeric(t3 - t2, units = 'mins'), 2)), 
+#     sprintf('Are they equal? --> %s', all.equal(Rcpp_optSANN, R_optSANN)),
+#     sep = '\n'))
+# system2('say', 'R script finished')
+# save(Rcpp_optSANN, R_optSANN, file = 'GenSA.RData')
+
+load('GenSA.RData')
 
 
 
+# t1 <- Sys.time()
+# Rcpp_optSANN2 <- GenSA(fn = cpp_TVVARSS_ml, par = head(par, -4), lower = par.lower,
+#                        upper = par.upper,
+#                        X = t(X), U = matrix(), par_fixed = head(par.fixed, -4),
+#                        control=list(smooth = F, maxit = maxit.SANN))
+# # par <- optSANN$par
+# t2 <- Sys.time()
+# R_optSANN2 <- GenSA(fn = TVVARSS.ml, par = head(par, -4), lower = par.lower,
+#                     upper = par.upper,
+#                     X = t(X), U = NULL, par.fixed = head(par.fixed, -4),
+#                     control=list(smooth = F, maxit = maxit.SANN))
+# t3 <- Sys.time()
+# cat(paste(
+#     sprintf('R version took %s minutes',
+#             round(as.numeric(t3 - t2, units = 'mins'), 2)),
+#     sprintf('Rcpp version took %s minutes',
+#             round(as.numeric(t2 - t1, units = 'mins'), 2)),
+#     sprintf('Are they equal? --> %s', all.equal(Rcpp_optSANN2, R_optSANN2)),
+#     sep = '\n'))
+# system2('say', 'R script finished')
+# system2('terminal-notifier',"-message Done -title Script")
+# save(Rcpp_optSANN2, R_optSANN2, file = 'GenSA2.RData')
+
+
+load('GenSA2.RData')
+
+identical(Rcpp_optSANN, R_optSANN)
+identical(Rcpp_optSANN2, R_optSANN2)
+
+identical(R_optSANN, R_optSANN2)
+identical(Rcpp_optSANN, Rcpp_optSANN2)
+
+
+
+t1 <- Sys.time()
+set.seed(9)
+R_optSANN_ss <- GenSA(fn = TVVARSS.ml, par = head(par, -4), lower = par.lower,
+                      upper = par.upper,
+                      X = t(X), U = NULL, par.fixed = head(par.fixed, -4),
+                      control=list(smooth = F, maxit = maxit.SANN))
+t2 <- Sys.time()
+system2('say', 'R version finished')
+set.seed(9)
+Rcpp_optSANN_ss <- GenSA(fn = cpp_TVVARSS_ml, par = head(par, -4), lower = par.lower,
+                         upper = par.upper,
+                         X = t(X), U = matrix(), par_fixed = head(par.fixed, -4),
+                         control=list(smooth = F, maxit = maxit.SANN))
+t3 <- Sys.time()
+cat(paste(
+    sprintf('R version took %s minutes',
+            round(as.numeric(t2 - t1, units = 'mins'), 2)),
+    sprintf('Rcpp version took %s minutes',
+            round(as.numeric(t3 - t2, units = 'mins'), 2)),
+    sprintf('Are they equal? --> %s', all.equal(Rcpp_optSANN_ss, R_optSANN_ss)),
+    sep = '\n'))
+system2('say', 'R script finished')
+system2('terminal-notifier',"-message Done -title Script")
+save(Rcpp_optSANN2, R_optSANN2, file = 'GenSA2.RData')
 
