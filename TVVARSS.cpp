@@ -17,12 +17,31 @@ using namespace arma;
 
 
 // Same as `determinant(FF)$modulus[1]` in R
-// [[Rcpp::export]]
 double cpp_log_det(arma::mat x) {
     double y = arma::det(x);
     double z = std::abs(y);
     return(std::log(z));
 }
+
+// Same as `matrix(x, byrow = TRUE)` in R
+arma::mat mat_byrow(arma::vec x, arma::uword nrow, arma::uword ncol) {
+    if(x.n_elem != (nrow * ncol)){
+        arma::mat M = arma::zeros(0);
+        return(M);
+    }
+    arma::mat M = arma::zeros(nrow, ncol);
+    arma::mat row_iter;
+    arma::uword j = 0;
+    for(arma::uword i=0; i<nrow; ++i) {
+        row_iter = x.subvec(j, (j + ncol - 1));
+        row_iter.reshape(1,ncol);
+        M.row(i) = row_iter;
+        j += ncol;
+    }
+    return(M);
+}
+
+
 
 
 // [[Rcpp::export]]
@@ -50,15 +69,7 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     B0.insert_cols(0, par_full.subvec(0,n-1));
     B0.reshape(n, 1);
     
-    arma::mat B = arma::zeros(n, n);
-    arma::uword j = n;
-    arma::mat row_iter;
-    for(arma::uword i=0; i<n; ++i) {
-        row_iter = par_full.subvec(j, (j + n - 1));
-        row_iter.reshape(1,n);
-        B.row(i) = row_iter;
-        j += n;
-    }
+    arma::mat B = mat_byrow(par_full.subvec(n, (n + n2 - 1)), n, n);
     
     arma::uword N;
     
@@ -91,14 +102,8 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     arma::mat C;
     
     if(U.n_cols > 1) {
-        C = arma::zeros(n, nu);
-        j = (n+n2+n+n+n*(n+1));
-        for(arma::uword i=0; i<n; ++i) {
-            row_iter = par_full.subvec(j, (j + nu - 1));
-            row_iter.reshape(1,nu);
-            C.row(i) = row_iter;
-            j += nu;
-        }
+        C = mat_byrow(par_full.subvec((n+n2+n+n+n*(n+1)), (n+n2+n+n+n*(n+1)+nu*n-1)), 
+                      n, nu);
     }
     
     arma::mat S;
@@ -196,15 +201,9 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
             
             x = y.rows(0,(n-1));
             B0 = y.rows(n, (2*n-1));
-            B = arma::zeros(n,n);
-            j = 2*n;
-            for(arma::uword i=0; i<n; ++i) {
-                row_iter = y.rows(j,(j+n-1));
-                row_iter.reshape(1,n);
-                B.row(i) = row_iter;
-                j += n;
-            }
 
+            B = mat_byrow(y(span(2*n, (y.n_rows - 1)), 0), n, n);
+            
             // TERMS OF LIKELIHOOD FUNCTION
 
             double logdetFF = cpp_log_det(FF);
@@ -215,7 +214,7 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     
     arma::mat LL = logFt + vFv;
     
-    // My attempt at including check for imaginary numbers
+    // My attempt at including check for complex numbers
     // arma::cx_mat LL_i = logFt + vFv;
     // arma::mat LL = arma::zeros(1,1);
     // if(LL_i(0,0).imag() != 0){
