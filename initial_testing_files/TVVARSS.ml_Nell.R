@@ -275,16 +275,16 @@ TVVARSS.ml <- function(par, X, U, par.fixed) {
 
 
 
-system.time(replicate(100, TVVARSS.ml(par = par, X = t(X), U = t(U), 
-                                      par.fixed = par.fixed)))
-#  user  system elapsed 
-# 1.860   0.015   1.880
-TVVARSS.ml(par = par, X = t(X), U = t(U), par.fixed = par.fixed)
-#          [,1]
-# [1,] 10960.63
-TVVARSS.ml(par = par, X = t(X), U = NULL, par.fixed = par.fixed)
-#          [,1]
-# [1,] 1618.454
+# system.time(replicate(100, TVVARSS.ml(par = par, X = t(X), U = t(U), 
+#                                       par.fixed = par.fixed)))
+# #  user  system elapsed 
+# # 1.860   0.015   1.880
+# TVVARSS.ml(par = par, X = t(X), U = t(U), par.fixed = par.fixed)
+# #          [,1]
+# # [1,] 10960.63
+# TVVARSS.ml(par = par, X = t(X), U = NULL, par.fixed = par.fixed)
+# #          [,1]
+# # [1,] 1618.454
 
 
 
@@ -403,22 +403,22 @@ sourceCpp('TVVARSS.cpp')
 # # [1,] 1618.454
 # 
 # 
-# t1 <- Sys.time()
-# R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), par.fixed = par.fixed, 
-#                  method = "Nelder-Mead", control = list(maxit = 10^5))
-# t2 <- Sys.time()
-# Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U), 
-#                     par_fixed = par.fixed, method = "Nelder-Mead", 
-#                     control = list(maxit = 10^5))
-# t3 <- Sys.time()
-# cat(paste(
-#     sprintf('R version took %s minutes', 
-#             round(as.numeric(t2 - t1, units = 'mins'), 2)),
-#     sprintf('Rcpp version took %s minutes', 
-#             round(as.numeric(t3 - t2, units = 'mins'), 2)), 
-#     sprintf('Are they equal? --> %s', all.equal(Rcpp_optim, R_optim)),
-#     sep = '\n'))
-# system2('say', 'R script finished')
+t1 <- Sys.time()
+R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), par.fixed = par.fixed,
+                 method = "Nelder-Mead", control = list(maxit = 10^5))
+t2 <- Sys.time()
+Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U),
+                    par_fixed = par.fixed, method = "Nelder-Mead",
+                    control = list(maxit = 10^5))
+t3 <- Sys.time()
+cat(paste(
+    sprintf('R version took %s minutes',
+            round(as.numeric(t2 - t1, units = 'mins'), 2)),
+    sprintf('Rcpp version took %s minutes',
+            round(as.numeric(t3 - t2, units = 'mins'), 2)),
+    sprintf('Are they equal? --> %s', all.equal(Rcpp_optim, R_optim)),
+    sep = '\n'))
+system2('say', 'R script finished')
 
 
 
@@ -488,13 +488,12 @@ load('GenSA.RData')
 # save(Rcpp_optSANN2, R_optSANN2, file = 'GenSA2.RData')
 
 
-load('GenSA2.RData')
+# load('GenSA2.RData')
 
 identical(Rcpp_optSANN, R_optSANN)
-identical(Rcpp_optSANN2, R_optSANN2)
-
-identical(R_optSANN, R_optSANN2)
-identical(Rcpp_optSANN, Rcpp_optSANN2)
+# identical(Rcpp_optSANN2, R_optSANN2)
+# identical(R_optSANN, R_optSANN2)
+# identical(Rcpp_optSANN, Rcpp_optSANN2)
 
 
 

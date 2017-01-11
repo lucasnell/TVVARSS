@@ -34,20 +34,30 @@ matplot(X, typ="l")
 # 
 # # Takes ~1.5 min with annealing, ~2 min without
 # set.seed(1)
-cpp_zNM <- cpp_TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
-                       #annealing = FALSE)
-                       annealing = TRUE)
+# cpp_zNM <- cpp_TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
+#                        #annealing = FALSE)
+#                        annealing = TRUE)
 # system2('say', 'R script finished')
 # system2('terminal-notifier',"-message Done -title Script")
 # 
 # 
 # 
 # save(zNM, cpp_zNM, file = 'TVVARSS.RData')
-load('TVVARSS.RData')
+# load('TVVARSS.RData')
 
 # save(zNM, cpp_zNM, file = 'TVVARSS_no_annealing.RData')
-# load('TVVARSS_no_annealing.RData')
+load('TVVARSS_no_annealing.RData')
 
+cpp_zNM2 <- cpp_TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
+                       annealing = FALSE)
+                       # annealing = TRUE)
+
+all.equal(cpp_zNM, cpp_zNM2)
+
+
+
+summary(cpp_zNM2)
+summary(zNM)
 
 all.equal(zNM, cpp_zNM)
 
@@ -60,22 +70,20 @@ all.equal(zNM, cpp_zNM)
 
 cppFunction(depends = 'RcppArmadillo',
             code = 
-'arma::mat mat_byrow(arma::vec x, arma::uword nrow, arma::uword ncol) {
-    if(x.n_elem != (nrow * ncol)){
-        arma::mat M = arma::zeros(0);
-        return(M);
-    }
-    arma::mat M = arma::zeros(nrow, ncol);
-    arma::mat row_iter;
-    arma::uword j = 0;
-    for(arma::uword i=0; i<nrow; ++i) {
-        row_iter = x.subvec(j, (j + ncol - 1));
-        row_iter.reshape(1,ncol);
-        M.row(i) = row_iter;
-        j += ncol;
-    }
-    return(M);
-    }')
+'arma::mat cpp_log_det(arma::mat x) {
+    // double y = arma::det(x);
+    // double z = std::abs(y);
+    // double log_z = arma::log(z);
+    arma::mat log_z = arma::pow(x,2);
+    return(log_z);
+}')
+
+
+# library(Rcpp)
+# library(RcppArmadillo)
+# library(GenSA)
+
+sourceCpp('TVVARSS.cpp')
 
 
 

@@ -20,19 +20,20 @@ using namespace arma;
 double cpp_log_det(arma::mat x) {
     double y = arma::det(x);
     double z = std::abs(y);
-    return(std::log(z));
+    double log_z = std::log(z);
+    return(log_z);
 }
 
 // Same as `matrix(x, byrow = TRUE)` in R
-arma::mat mat_byrow(arma::vec x, arma::uword nrow, arma::uword ncol) {
-    if(x.n_elem != (nrow * ncol)){
-        Rcpp::stop("Length of x != nrow * ncol");
+arma::mat mat_byrow(arma::vec V, arma::uword nrow, arma::uword ncol) {
+    if(V.n_elem != (nrow * ncol)){
+        Rcpp::stop("Length of V != nrow * ncol");
     }
     arma::mat M = arma::zeros(nrow, ncol);
     arma::mat row_iter;
     arma::uword j = 0;
     for(arma::uword i=0; i<nrow; ++i) {
-        row_iter = x.subvec(j, (j + ncol - 1));
+        row_iter = V.subvec(j, (j + ncol - 1));
         row_iter.reshape(1,ncol);
         M.row(i) = row_iter;
         j += ncol;
@@ -41,9 +42,37 @@ arma::mat mat_byrow(arma::vec x, arma::uword nrow, arma::uword ncol) {
 }
 
 
+// Checks if there's a complex number in a matrix
+bool cx_present(arma::cx_mat M){
+    const arma::cx_mat& cM = M;
+    arma::uword nrow = M.n_rows;
+    arma::uword ncol = M.n_cols;
+    double im;
+    bool out = false;
+    for (arma::uword i=0; i<nrow; ++i){
+        for (arma::uword j=0; j<ncol; ++j){
+            im = cM(i,j).imag();
+            if(im != 0){
+                out = true;
+                return(out);
+            }
+        }
+    }
+    return(out);
+}
+
+
+
+
+
 // [[Rcpp::export]]
 arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
     
+    // Defining output type now, in case of complex numbers
+    arma::mat LL = arma::zeros(1,1);
+    LL(0,0) = std::pow(10,10);
+    // Used multiple times to test for complex numbers
+    bool is_cx;
     // Note: X and U are transposed, so time runs through columns
     arma::uword n = X.n_rows;
     arma::uword Tmax = X.n_cols;
@@ -68,27 +97,16 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     
     arma::mat B = mat_byrow(par_full.subvec(n, (n + n2 - 1)), n, n);
     
-    arma::uword N;
-    
     arma::vec Se_vec = par_full.subvec((n+n2),(n+n2+n-1));
-    N = Se_vec.n_elem;
-    for(arma::uword i=0; i<N; ++i) {
-        Se_vec(i) = std::pow(Se_vec(i), 2);
-    }
+    Se_vec = arma::pow(Se_vec, 2);
     arma::mat Se = arma::diagmat(Se_vec);
     
     arma::vec Su_vec = par_full.subvec((n+n2+n),(n+n2+n+n-1));
-    N = Su_vec.n_elem;
-    for(arma::uword i=0; i<N; ++i) {
-        Su_vec(i) = std::pow(Su_vec(i), 2);
-    }
+    Su_vec = arma::pow(Su_vec, 2);
     arma::mat Su = arma::diagmat(Su_vec);
     
     arma::vec Sb_vec = par_full.subvec((n+n2+n+n), (n+n2+n+n+n*(n+1))-1);
-    N = Sb_vec.n_elem;
-    for(arma::uword i=0; i<N; ++i) {
-        Sb_vec(i) = std::pow(Sb_vec(i), 2);
-    }
+    Sb_vec = arma::pow(Sb_vec, 2);
     arma::mat Sb = arma::diagmat(Sb_vec);
     
     
@@ -125,24 +143,31 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     // variation (effectively assuming that the dominant eigenvalue of the system is 
     // zero).
     arma::cx_vec eigval = arma::eig_gen(B);
-    arma::vec eig_reals = arma::zeros(eigval.n_elem);
-    double eig_real_i;
-    for(arma::uword i=0; i<(eigval.n_elem); ++i){
-        eig_real_i = eigval(i).real();
-        eig_reals(i) = std::abs(eig_real_i);
+    is_cx = cx_present(arma::conv_to<arma::cx_mat>::from(eigval));
+    arma::vec eig_reals;
+    if(is_cx){
+        return(LL);
     }
+    eig_reals = arma::conv_to<arma::vec>::from(eigval);
     
     arma::mat PP;
-    arma::mat PP_k;
+    arma::cx_mat PP_cx;
+    arma::cx_mat B_cx = arma::conv_to<arma::cx_mat>::from(B);
+    arma::cx_mat PP_k;
     arma::mat PP_Se = Se;
     arma::mat PP_dm;
     if(max(eig_reals) < 1){
-        PP_k = arma::kron(B,B);
+        PP_k = arma::kron(B_cx, B_cx);
         PP_Se.reshape(n*n,1);
         PP_dm = n2_ident;
-        PP = arma::inv(PP_dm - PP_k);
-        PP = PP * PP_Se;
-        PP.reshape(n, n);
+        PP_cx = arma::inv(PP_dm - PP_k);
+        PP_cx = PP_cx * PP_Se;
+        PP_cx.reshape(n, n);
+        is_cx = cx_present(PP_cx);
+        if (is_cx){
+            return(LL);
+        }
+        PP = arma::conv_to<arma::mat>::from(PP_cx);
     } else {
         PP = Se;
     }
@@ -157,6 +182,7 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     arma::mat BB;
     arma::mat B12;
     arma::mat B13;
+    arma::cx_mat B13_cx;
     arma::mat BB_temp;
     arma::mat FF;
     arma::mat invF;
@@ -166,9 +192,15 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         // PREDICTION EQUATIONS
         B12 = n_ident - B;
         B13 = x - B0;
-        B13 = arma::kron(B13.t(), n_ident);
+        B13_cx = arma::conv_to<arma::cx_mat>::from(B13);
+        B13_cx = arma::kron(B13_cx.t(), n_ident);
+        is_cx = cx_present(B13_cx);
+        if (is_cx){
+            return(LL);
+        }
+        B13 = arma::conv_to<arma::mat>::from(B13_cx);
         BB = arma::join_rows(B, B12);
-        BB = arma::join_rows(BB, B13);
+        BB = arma::join_rows(BB, arma::conv_to<arma::mat>::from(B13));
         BB_temp = arma::join_rows(arma::zeros(n, n), n_ident);
         BB_temp = arma::join_rows(BB_temp, arma::zeros(n, n2));
         BB = arma::join_cols(BB, BB_temp);
@@ -209,16 +241,14 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         }
     }
     
-    arma::mat LL = logFt + vFv;
-    
-    // My attempt at including check for complex numbers
-    // arma::cx_mat LL_i = logFt + vFv;
-    // arma::mat LL = arma::zeros(1,1);
-    // if(LL_i(0,0).imag() != 0){
-    //     LL(0,0) = std::pow(10,10);
-    // } else {
-    //     LL = arma::real(LL_i);
+    LL = logFt + vFv;
+    // I don't think the below check is necessary
+    // arma::cx_mat LL_cx = logFt + vFv;
+    // is_cx = cx_present(LL_cx);
+    // if (is_cx){
+    //     return(LL);
     // }
+    // LL = arma::conv_to<arma::mat>::from(LL_cx);
     
     return(LL);
 }
