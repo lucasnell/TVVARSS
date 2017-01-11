@@ -70,12 +70,9 @@ all.equal(zNM, cpp_zNM)
 
 cppFunction(depends = 'RcppArmadillo',
             code = 
-'arma::mat cpp_log_det(arma::mat x) {
-    // double y = arma::det(x);
-    // double z = std::abs(y);
-    // double log_z = arma::log(z);
-    arma::mat log_z = arma::pow(x,2);
-    return(log_z);
+'arma::vec test(arma::cx_vec x) {
+    arma::vec out = abs(x);
+    return(out);
 }')
 
 

@@ -382,9 +382,8 @@ y <- y0 + PP %*% t(Z) %*% invF %*% v
 
 
 sourceCpp('TVVARSS.cpp')
-# cpp_test(par, t(X), t(U), par.fixed)
 # system.time(replicate(100, cpp_TVVARSS_ml(par, t(X), t(U), par.fixed)))
-# system.time(replicate(100, TVVARSS.ml(par = par, X = tX, U = tU, par.fixed = par.fixed)))
+# system.time(replicate(100, TVVARSS.ml(par = par, t(X), t(U), par.fixed)))
 
 summary_output <- function(out1, out2, t_vec, name_vec = c('R', 'Rcpp')){
     cat(paste(
@@ -415,16 +414,16 @@ summary_output <- function(out1, out2, t_vec, name_vec = c('R', 'Rcpp')){
 # # [1,] 1618.454
 # 
 # 
-# t1 <- Sys.time()
-# R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), par.fixed = par.fixed,
-#                  method = "Nelder-Mead", control = list(maxit = 10^5))
-# t2 <- Sys.time()
-# Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U),
-#                     par_fixed = par.fixed, method = "Nelder-Mead",
-#                     control = list(maxit = 10^5))
-# t3 <- Sys.time()
-# summary_output(R_optim, Rcpp_optim, c(t1, t2, t3))
-# system2('say', 'R script finished')
+t1 <- Sys.time()
+R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), par.fixed = par.fixed,
+                 method = "Nelder-Mead", control = list(maxit = 10^5))
+t2 <- Sys.time()
+Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U),
+                    par_fixed = par.fixed, method = "Nelder-Mead",
+                    control = list(maxit = 10^5))
+t3 <- Sys.time()
+summary_output(R_optim, Rcpp_optim, c(t1, t2, t3))
+system2('say', 'R script finished')
 # # R version took 2.36 minutes
 # # Rcpp version took 0.07 minutes
 # # Are they equal? --> TRUE
@@ -522,7 +521,7 @@ set.seed(9)
 gensa1 <- GenSA(fn = cpp_TVVARSS_ml, par = head(par, -4), lower = par.lower,
                 upper = par.upper, X = t(X), U = matrix(), 
                 par_fixed = head(par.fixed, -4),
-                control=list(smooth = F, maxit = 10, max.call=10, verbose=T))
+                control=list(smooth = F, maxit = 10, verbose=T))
 set.seed(9)
 # gensa2 <- GenSA(fn = cpp_TVVARSS_ml, par = head(par, -4), lower = par.lower,
 #                 upper = par.upper, X = t(X), U = matrix(), 
@@ -531,8 +530,9 @@ set.seed(9)
 gensa2 <- GenSA(fn = TVVARSS.ml, par = head(par, -4), lower = par.lower,
                 upper = par.upper, X = t(X), U = NULL, 
                 par.fixed = head(par.fixed, -4),
-                control=list(smooth = F, maxit = 10, max.call=10, verbose=T))
-
+                control=list(smooth = F, maxit = 10, verbose=T))
+system2('say', 'R script finished')
+system2('terminal-notifier',"-message Done -title Script")
 identical(gensa1$par, gensa2$par)
 identical(gensa1$par, head(par, -4))
 gensa1$par; gensa2$par
