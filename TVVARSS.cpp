@@ -5,16 +5,6 @@
 using namespace Rcpp;
 using namespace arma;
 
-// This is a simple example of exporting a C++ function to R. You can
-// source this function into an R session using the Rcpp::sourceCpp 
-// function (or via the Source button on the editor toolbar). Learn
-// more about Rcpp at:
-//
-//   http://www.rcpp.org/
-//   http://adv-r.had.co.nz/Rcpp.html
-//   http://gallery.rcpp.org/
-//
-
 
 // Same as `determinant(FF)$modulus[1]` in R
 double cpp_log_det(arma::mat x) {
@@ -24,7 +14,7 @@ double cpp_log_det(arma::mat x) {
     return(log_z);
 }
 
-// Same as `determinant(FF)$modulus[1]` in R
+// Same as `determinant(FF)$modulus[1]` in R, using complex numbers
 arma::cx_double cx_cpp_log_det(arma::cx_mat x) {
     arma::cx_double y = arma::det(x);
     arma::cx_double z = std::abs(y);
@@ -49,7 +39,7 @@ arma::mat mat_byrow(arma::vec V, arma::uword nrow, arma::uword ncol) {
     return(M);
 }
 
-// Same as `matrix(x, byrow = TRUE)` in R
+// Same as `matrix(x, byrow = TRUE)` in R, using complex numbers
 arma::cx_mat cx_mat_byrow(arma::cx_vec V, arma::uword nrow, arma::uword ncol) {
     if(V.n_elem != (nrow * ncol)){
         Rcpp::stop("Length of V != nrow * ncol");
@@ -176,7 +166,6 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
 
     arma::cx_mat PP;
     arma::cx_mat PP_cx;
-    // arma::cx_mat B_cx = arma::conv_to<arma::cx_mat>::from(B);
     arma::cx_mat B_cx = B;
     arma::cx_mat PP_k;
     arma::cx_mat PP_Se = Se;
@@ -192,7 +181,6 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         // if (is_cx){
         //     return(LL);
         // }
-        // // PP = arma::conv_to<arma::cx_mat>::from(PP_cx);
         PP = PP_cx;
     } else {
         PP = Se;
@@ -219,15 +207,15 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         // PREDICTION EQUATIONS
         B12 = n_ident - B;
         B13 = x - B0;
-        B13_cx = arma::conv_to<arma::cx_mat>::from(B13);
+        B13_cx = B13;
         B13_cx = arma::kron(B13_cx.t(), n_ident);
         // is_cx = cx_present(B13_cx);
         // if (is_cx){
         //     return(LL);
         // }
-        B13 = arma::conv_to<arma::cx_mat>::from(B13_cx);
+        B13 = B13_cx;
         BB = arma::join_rows(B, B12);
-        BB = arma::join_rows(BB, arma::conv_to<arma::cx_mat>::from(B13));
+        BB = arma::join_rows(BB, B13);
         BB_temp = arma::join_rows(arma::zeros<arma::cx_mat>(n, n), n_ident);
         BB_temp = arma::join_rows(BB_temp, arma::zeros<arma::cx_mat>(n, n2));
         BB = arma::join_cols(BB, BB_temp);

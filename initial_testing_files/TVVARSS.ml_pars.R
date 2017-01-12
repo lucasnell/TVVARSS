@@ -1,6 +1,6 @@
 # Setting up parameters necessary to test TVVARSS.ml (both R and C++ versions)
 
-set.seed(9)
+set.seed(79)
 Tmax <- 100
 n <- 2
 B0 <- matrix(c(1,1), nrow = n, ncol = 1)
@@ -20,7 +20,8 @@ X[,1] <- (X[,1] - mean(X[,1]))/sd(X[,1])
 X[,2] <- (X[,2] - mean(X[,2]))/sd(X[,2])
 
 
-set.seed(8); U <- cbind(U, U * rnorm(100))
+set.seed(8)
+U <- cbind(U, U * rnorm(100))
 nu <- if (is.null(ncol(U))) 1 else ncol(U)
 # plot(X ~ U)
 
@@ -147,4 +148,118 @@ par.full[!is.na(par.start)] <- par.start[!is.na(par.start)]
 
 par.full[!is.na(par.fixed)] <- par.fixed[!is.na(par.fixed)]	
 par <- par.full[is.na(par.fixed)]
+
+
+
+
+
+
+
+
+
+
+
+
+# --------------------------
+# =================
+
+# For GenSA testing...
+
+# =================
+# --------------------------
+
+maxit.SANN <- 10 # 10^2
+
+par.upper <- c(array(1, dim=n), array(2, dim=n^2), array(10, dim=n), array(10, dim=n),
+               array(10, dim=n*(n+1)), array(100, dim=n*nu))
+par.lower <- c(array(-1, dim=n), array(-2, dim=n^2), array(0, dim=n), array(0, dim=n),
+               array(0, dim=n*(n+1)), array(-100, dim=n*nu))
+
+
+
+
+
+
+
+
+
+# =====================================================================================
+# =====================================================================================
+# =====================================================================================
+# =====================================================================================
+
+#       Intermediate objects within TVVARSS.ml function
+#       (not necessary for initial setup, but left here in case they're useful for 
+#        for troubleshooting)
+
+# =====================================================================================
+# =====================================================================================
+# =====================================================================================
+# =====================================================================================
+
+
+# par.full <- par.fixed
+# par.full[is.na(par.fixed)] <- par
+# 
+# # Se
+# diag(par.full[(n+n^2+1):(n+n^2+n)]^2)
+# # Su
+# diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)
+# # Sb
+# diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2)
+# 
+# # C
+# C = matrix(par.full[(n+n^2+n+n+n*(n+1)+1):(n+n^2+n+n+n*(n+1)+nu*n)], nrow=n, ncol=nu, byrow = TRUE); C
+# 
+# # S
+# # as.matrix(rbind(cbind(Se, matrix(0, n, n*(n+1))), 
+# #                 cbind(matrix(0, n*(n+1), n), Sb)))
+# S = as.matrix(rbind(cbind(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), 
+#                           matrix(0, n, n*(n+1))),
+#                     cbind(matrix(0, n*(n+1), n), 
+#                           diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2))))
+# 
+# # Z
+# Z = as.matrix(cbind(diag(n), matrix(0, n, n*(n+1)))); Z
+# 
+# # x
+# t(X)[,1]
+# 
+# # Check "If the initial parameter values imply a stationary distribution..."
+# max(abs(eigen(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))$values))
+# 
+# # PP
+# matrix(solve(diag(n*n)-kronecker(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE),matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))) %*% matrix(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), nrow = n*n), n, n)
+# 
+# # PP after manipulation
+# PP0 = as.matrix(rbind(cbind(matrix(solve(diag(n*n)-kronecker(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE),matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE))) %*% matrix(diag(par.full[(n+n^2+1):(n+n^2+n)]^2), nrow = n*n), n, n), matrix(0, n, n*(n+1))), 
+#                       cbind(matrix(0, n*(n+1), n), diag(par.full[(n+n^2+n+n+1):(n+n^2+n+n+n*(n+1))]^2))))
+# 
+# 
+# # BB
+# B12 <- diag(n) - matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE)
+# B13 <- kronecker(t(t(X)[,1]-matrix(par.full[1:n], nrow=n, ncol=1)),diag(n))
+# 
+# BB = as.matrix(rbind(cbind(matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE), B12, B13), 
+#                      cbind(matrix(0, n, n), diag(n), matrix(0, n, n^2)), 
+#                      cbind(matrix(0, n^2, 2*n), diag(n^2))))
+# 
+# 
+# # PP after BB creation
+# PP = BB %*% PP0 %*% t(BB) + S
+# 
+# # x after first iteration of for loop
+# # B0 + B %*% (x-B0) + C * U[t]
+# # # B0 + B %*% (x-B0) + C %*% U[,t]
+# x0 = matrix(par.full[1:n], nrow=n, ncol=1) + matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE) %*% (as.matrix(t(X)[,1]) - matrix(par.full[1:n], nrow=n, ncol=1)) + C %*% as.matrix(t(U)[,2])
+# 
+# B0_0 <- matrix(par.full[1:n], nrow=n, ncol=1)
+# B_0 <- matrix(par.full[(n+1):(n+n^2)], nrow=n, ncol=n, byrow = TRUE)
+# 
+# FF <- Z %*% PP %*% t(Z) + diag(par.full[(n+n^2+n+1):(n+n^2+n+n)]^2)
+# invF <- solve(FF)
+# 
+# y0 <- matrix(c(x0, B0_0, t(B_0)), ncol=1)
+# v <- as.matrix(t(X)[,2]) - Z %*% y0
+# y <- y0 + PP %*% t(Z) %*% invF %*% v
 
