@@ -27,30 +27,61 @@ matplot(X, typ="l")
 
 # quartz()
 # Takes ~30 min with annealing, ~1.5 min without
-# set.seed(1)
-# zNM <- TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
-#                #annealing = FALSE)
-#                annealing = TRUE)
-# 
-# # Takes ~1.5 min with annealing, ~2 min without
-# set.seed(1)
-# cpp_zNM <- cpp_TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
-#                        #annealing = FALSE)
-#                        annealing = TRUE)
-# system2('say', 'R script finished')
-# system2('terminal-notifier',"-message Done -title Script")
-# 
+set.seed(1)
+zNM <- TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
+               annealing = FALSE)
+               # annealing = TRUE)
+
+# Takes ~1.5 min with annealing, ~2 min without
+set.seed(1)
+cpp_zNM <- cpp_TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
+                       annealing = FALSE)
+                       # annealing = TRUE)
+system2('say', 'R script finished')
+system2('terminal-notifier',"-message Done -title Script")
+all.equal(zNM, cpp_zNM)
+
+# With annealing...
+# > all.equal(zNM, cpp_zNM)
+# [1] "Component “se”: Mean relative difference: 7.369233e-06"             
+# [2] "Component “su”: Mean relative difference: 3.267949e-05"             
+# [3] "Component “Sb0”: Mean relative difference: 3.174057e-06"            
+# [4] "Component “Sb”: Mean relative difference: 7.188581e-06"             
+# [5] "Component “B0”: Mean relative difference: 1.60482e-05"              
+# [6] "Component “B”: Mean relative difference: 7.586266e-06"              
+# [7] "Component “logLik”: Mean relative difference: 2.343661e-06"         
+# [8] "Component “AIC”: Mean relative difference: 2.228445e-06"            
+# [9] "Component “B0.fitted”: Mean relative difference: 0.002025549"       
+# [10] "Component “B.fitted”: Mean relative difference: 0.002272341"        
+# [11] "Component “X.fitted”: Mean relative difference: 0.000153545"        
+# [12] "Component “PP.fitted”: Mean relative difference: 0.001931707"       
+# [13] "Component “eigen.fitted”: Mean relative Mod difference: 0.002331226"
+# [14] "Component “opt.par”: Mean relative difference: 9.404639e-06"
+
+# Without annealing...
+# > all.equal(zNM, cpp_zNM)
+# [1] "Component “se”: Mean relative difference: 0.08068179"            
+# [2] "Component “su”: Mean relative difference: 1.238354"              
+# [3] "Component “Sb0”: Mean relative difference: 1.615259"             
+# [4] "Component “Sb”: Mean relative difference: 0.5464784"             
+# [5] "Component “B0”: Mean relative difference: 0.186959"              
+# [6] "Component “B”: Mean relative difference: 0.1338447"              
+# [7] "Component “logLik”: Mean relative difference: 0.005695631"       
+# [8] "Component “AIC”: Mean relative difference: 0.005253712"          
+# [9] "Component “B0.fitted”: Mean relative difference: 1.199959"       
+# [10] "Component “B.fitted”: Mean relative difference: 0.2313852"       
+# [11] "Component “X.fitted”: Mean relative difference: 0.05634668"      
+# [12] "Component “PP.fitted”: Mean relative difference: 1.284283"       
+# [13] "Component “eigen.fitted”: Mean relative Mod difference: 0.151117"
+# [14] "Component “opt.par”: Mean relative difference: 0.2581309"
 # 
 # 
 # save(zNM, cpp_zNM, file = 'TVVARSS.RData')
 # load('TVVARSS.RData')
 
-# save(zNM, cpp_zNM, file = 'TVVARSS_no_annealing.RData')
-load('TVVARSS_no_annealing.RData')
+save(zNM, cpp_zNM, file = 'TVVARSS_no_annealing.RData')
+# load('TVVARSS_no_annealing.RData')
 
-cpp_zNM2 <- cpp_TVVARSS(X, Tsamplefract = 0.9, method="Nelder-Mead", show.fig = FALSE,
-                       annealing = FALSE)
-                       # annealing = TRUE)
 
 all.equal(cpp_zNM, cpp_zNM2)
 
@@ -70,10 +101,31 @@ all.equal(zNM, cpp_zNM)
 
 cppFunction(depends = 'RcppArmadillo',
             code = 
-'arma::vec test(arma::cx_vec x) {
-    arma::vec out = abs(x);
+'bool cx_present(arma::cx_mat M){
+    const arma::cx_mat& cM = M;
+    arma::uword nrow = M.n_rows;
+    arma::uword ncol = M.n_cols;
+    double im;
+    bool out = false;
+    for (arma::uword i=0; i<nrow; ++i){
+        for (arma::uword j=0; j<ncol; ++j){
+            im = cM(i,j).imag();
+            if(im != 0){
+                out = true;
+                return(out);
+            }
+        }
+    }
     return(out);
 }')
+
+
+
+cx_present(matrix(c(1:9,1i), 2))
+cx_present(matrix(1:10, 2))
+
+
+
 
 
 # library(Rcpp)

@@ -169,12 +169,10 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     // zero).
     arma::cx_vec eigvals = arma::eig_gen(B);
     arma::vec eig_abs = abs(eigvals);
-    // is_cx = cx_present(arma::conv_to<arma::cx_mat>::from(eigval));
-    // arma::vec eig_reals;
+    // is_cx = cx_present(arma::conv_to<arma::cx_mat>::from(eigvals));
     // if(is_cx){
     //     return(LL);
     // }
-    // eig_reals = arma::conv_to<arma::vec>::from(eigval);
 
     arma::cx_mat PP;
     arma::cx_mat PP_cx;
@@ -194,7 +192,7 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         // if (is_cx){
         //     return(LL);
         // }
-        // PP = arma::conv_to<arma::cx_mat>::from(PP_cx);
+        // // PP = arma::conv_to<arma::cx_mat>::from(PP_cx);
         PP = PP_cx;
     } else {
         PP = Se;
@@ -233,7 +231,8 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         BB_temp = arma::join_rows(arma::zeros<arma::cx_mat>(n, n), n_ident);
         BB_temp = arma::join_rows(BB_temp, arma::zeros<arma::cx_mat>(n, n2));
         BB = arma::join_cols(BB, BB_temp);
-        BB = arma::join_cols(BB, arma::join_rows(arma::zeros<arma::cx_mat>(n2, 2*n), n2_ident));
+        BB = arma::join_cols(BB, arma::join_rows(arma::zeros<arma::cx_mat>(n2, 2*n), 
+                                                 n2_ident));
         PP = BB * PP * BB.t() + S;
         if(U.n_cols < 2) {
             x = B0 + B * (x - B0);
@@ -264,6 +263,10 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
             
             // TERMS OF LIKELIHOOD FUNCTION
             logdetFF = cx_cpp_log_det(FF);
+            is_cx = logdetFF.imag() != 0;
+            if (is_cx){
+                return(LL);
+            }
             logFt += logdetFF;
             vFv = vFv + v.t() * invF * v;
         }
