@@ -1,6 +1,7 @@
 library(Rcpp)
 library(RcppArmadillo)
 library(GenSA)
+library(minqa)
 
 sourceCpp('TVVARSS.cpp')
 

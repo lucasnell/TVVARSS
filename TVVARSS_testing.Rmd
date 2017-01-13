@@ -1,0 +1,165 @@
+---
+title: "Testing `TVVARSS`"
+author: "Lucas Nell"
+date: "`r format(Sys.Date())`"
+output: github_document
+---
+
+```{r setup, include = FALSE, cache = FALSE}
+knitr::opts_chunk$set(comment = NA, error = TRUE, echo = FALSE)
+library(GenSA)
+load('./initial_testing_files/TVVARSS.ml_testing.RData')
+```
+
+
+This document outlines the results of the following:
+
+1. Using optimization and simulated annealing on `TVVARSS.ml` and `cpp_TVVARSS_ml`. The
+code to conduct these tests is in 
+[this file](./initial_testing_files/TVVARSS.ml_testing.R).
+2. Overall output from `TVVARSS` and `cpp_TVVARSS`. The
+code to conduct these tests is in 
+[this file](./initial_testing_files/TVVARSS_testing.R).
+
+Comparisons between R and C++ versions used the `all.equal` function, which tests for
+'near equality'. The tolerance for near equality is 
+$`r signif(sqrt(.Machine$double.eps),3)`$.
+
+
+# Optimization and simulated annealing
+
+## Optimization
+
+#### Using `optim(..., method = 'Nelder-Mead')`
+
+```{r}
+summary_output(R_optim[['NM']], Rcpp_optim[['NM']], tv.ml_t[1:3])
+```
+
+
+#### Using `optim(..., method = 'BFGS')`
+
+```{r}
+summary_output(R_optim[['BF']], Rcpp_optim[['BF']], tv.ml_t[4:6])
+```
+
+
+#### Using `bobyqa(...)`
+
+```{r}
+summary_output(R_optim[['bq']], Rcpp_optim[['bq']], tv.ml_t[7:9])
+```
+
+
+## Simulated annealing
+
+```{r}
+summary_output(R_GenSA, Rcpp_GenSA, tv.ml_t[10:12])
+```
+
+
+
+# Overall output from `TVVARSS` and `cpp_TVVARSS`
+
+Methods `'Nelder-Mead'`, `'BFGS'`, and `'bobyqa'` were run, with and without simulated
+annealing, to see how output and performance compared. 
+Times below are for the 6 total runs for each version of `TVVARSS`:
+
+```{r}
+source('./initial_testing_files/TVVARSS_forC_17Dec16.R')
+load('./initial_testing_files/TVVARSS_testing.RData')
+cat(paste(
+    sprintf('R version took %s minutes',
+            round(as.numeric(tv_t[3] - tv_t[2], units = 'mins'), 2)),
+    sprintf('cpp version took %s minutes',
+            round(as.numeric(tv_t[2] - tv_t[1], units = 'mins'), 2)),
+    sep = '\n'))
+```
+
+
+## Using `method = 'Nelder-Mead'`
+#### With annealing
+```{r}
+cat(paste(
+    'Are they equal?',
+    paste(all.equal(cpp_out[['Nelder-Mead']]$anneal, R_out[['Nelder-Mead']]$anneal),
+          collapse = '\n'),
+    sep = '\n'))
+```
+#### No annealing
+```{r}
+cat(paste(
+    'Are they equal?',
+    paste(all.equal(cpp_out[['Nelder-Mead']]$no_anneal, R_out[['Nelder-Mead']]$no_anneal),
+    collapse = '\n'),
+    sep = '\n'))
+```
+
+
+## Using `method = 'BFGS'`
+#### With annealing
+
+```{r}
+cat(paste(
+    'Are they equal?',
+    paste(all.equal(cpp_out[['BFGS']]$anneal, R_out[['BFGS']]$anneal),
+    collapse = '\n'),
+    sep = '\n'))
+```
+R and C++ versions had output all within $`r signif(sqrt(.Machine$double.eps),3)`$
+of each other.
+
+#### No annealing
+```{r}
+cat(paste(
+    'Are they equal?',
+    paste(all.equal(cpp_out[['BFGS']]$no_anneal, R_out[['BFGS']]$no_anneal),
+    collapse = '\n'),
+    sep = '\n'))
+```
+This looks weird because the R version here had an error, so returned `NULL`.
+Below is the error returned and the output from `traceback()` run afterward::
+```{r}
+# Error message pasted from running the following:
+# e_run <- TVVARSS(X, Tsamplefract = 0.9, method = 'BFGS', show.fig = FALSE, 
+#                  annealing = FALSE)
+cat(paste('Error in solve.default(FF) : 
+  system is computationally singular: reciprocal condition number = 3.97576e-17\n\n'))
+# Pasted output from `traceback()`
+cat(paste('6: solve.default(FF)
+5: solve(FF) at TVVARSS_forC_17Dec16.R#82
+4: fn(par, ...)
+3: (function (par) 
+   fn(par, ...))(c(2442101.41194779, -3417820.0737009, -1299053.23694122, 
+   3731843.14805551, -17889292.6552748, -3290188.25617733, 4547907.20822766, 
+   -1474431.03066228, 270.996097653055, 1307468.69164327, 95126.5692356095, 
+   -3088894.64420066, -3443284.04369214, 4977648.28422679, 150664.747666296, 
+   1821492.68435145))
+2: optim(fn = TVVARSS.ml, par = par, X = tX, U = tU, par.fixed = par.fixed, 
+       method = "BFGS", control = optim.control) at TVVARSS_forC_17Dec16.R#420
+1: TVVARSS(X, Tsamplefract = 0.9, method = "BFGS", show.fig = FALSE, 
+       annealing = FALSE)'))
+```
+
+
+## Using `method = 'bobyqa'`
+#### With annealing
+```{r}
+cat(paste(
+    'Are they equal?',
+    paste(all.equal(cpp_out[['bobyqa']]$anneal, R_out[['bobyqa']]$anneal),
+    collapse = '\n'),
+    sep = '\n'))
+```
+#### No annealing
+```{r}
+cat(paste(
+    'Are they equal?',
+    paste(all.equal(cpp_out[['bobyqa']]$no_anneal, R_out[['bobyqa']]$no_anneal),
+    collapse = '\n'),
+    sep = '\n'))
+```
+
+
+
+
