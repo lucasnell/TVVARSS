@@ -113,8 +113,6 @@ tv.ml_t[12] <- Sys.time()
 message(sprintf('Total time taken: %s minutes',
                 round(as.numeric(tail(tv.ml_t, 1) - tv.ml_t[1], units = 'mins'), 2)))
 
-save(R_optim, Rcpp_optim, R_GenSA, Rcpp_GenSA, tv.ml_t, summary_output,
-     file = './initial_testing_files/TVVARSS.ml_testing.RData')
 
 
 
@@ -147,8 +145,10 @@ summary_output(R_optim[['bq']], Rcpp_optim[['bq']], tv.ml_t[7:9])
 summary_output(R_GenSA, Rcpp_GenSA, tv.ml_t[10:12])
 
 
+# Saving objects for results in ../TVVARSS_testing.Rmd/md
 
-
+save(R_optim, Rcpp_optim, R_GenSA, Rcpp_GenSA, tv.ml_t, summary_output,
+     file = './initial_testing_files/TVVARSS.ml_testing.RData')
 
 
 
