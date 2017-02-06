@@ -14,15 +14,6 @@ double cpp_log_det(mat x) {
     return(log_z);
 }
 
-// Same as `determinant(FF)$modulus[1]` in R, using complex numbers
-cx_double cx_cpp_log_det(cx_mat x) {
-    cx_double y = det(x);
-    // assert(y != 0i0);
-    cx_double z = std::abs(y);
-    cx_double log_z = std::log(z);
-    return(log_z);
-}
-
 // Same as `matrix(x, byrow = TRUE)` in R
 mat mat_byrow(vec V, uword nrow, uword ncol) {
     if(V.n_elem != (nrow * ncol)){
@@ -40,22 +31,6 @@ mat mat_byrow(vec V, uword nrow, uword ncol) {
     return(M);
 }
 
-// Same as `matrix(x, byrow = TRUE)` in R, using complex numbers
-cx_mat cx_mat_byrow(cx_vec V, uword nrow, uword ncol) {
-    if(V.n_elem != (nrow * ncol)){
-        Rcpp::stop("Length of V != nrow * ncol");
-    }
-    cx_mat M = zeros<cx_mat>(nrow, ncol);
-    cx_mat row_iter;
-    uword j = 0;
-    for(uword i=0; i<nrow; ++i) {
-        row_iter = V.subvec(j, (j + ncol - 1));
-        row_iter.reshape(1,ncol);
-        M.row(i) = row_iter;
-        j += ncol;
-    }
-    return(M);
-}
 
 
 // Checks if there's a complex number in a matrix
@@ -94,62 +69,62 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
     uword Tmax = X.n_cols;
     
     // Identity matrix of size n by n
-    cx_mat n_ident = eye<cx_mat>(n,n);
+    mat n_ident = eye<mat>(n,n);
     // And for n^2 by n^2
     sword n2 = n * n;
-    cx_mat n2_ident = eye<cx_mat>(n2,n2);
+    mat n2_ident = eye<mat>(n2,n2);
     
-    cx_vec par_full = conv_to<cx_vec>::from(par_fixed);
+    vec par_full = conv_to<vec>::from(par_fixed);
     uvec par_nas = find_nonfinite(par_fixed);
-    par_full.elem(par_nas) = conv_to<cx_vec>::from(par);
+    par_full.elem(par_nas) = conv_to<vec>::from(par);
     
     // =============
     // set up coefficient matrices
     // =============
     
-    cx_mat B0;
+    mat B0;
     B0.insert_cols(0, par_full.subvec(0,n-1));
     B0.reshape(n, 1);
     
-    cx_mat B = cx_mat_byrow(par_full.subvec(n, (n + n2 - 1)), n, n);
+    mat B = mat_byrow(par_full.subvec(n, (n + n2 - 1)), n, n);
     
-    cx_vec Se_vec = par_full.subvec((n+n2),(n+n2+n-1));
+    vec Se_vec = par_full.subvec((n+n2),(n+n2+n-1));
     Se_vec = pow(Se_vec, 2);
-    cx_mat Se = diagmat(Se_vec);
+    mat Se = diagmat(Se_vec);
     
-    cx_vec Su_vec = par_full.subvec((n+n2+n),(n+n2+n+n-1));
+    vec Su_vec = par_full.subvec((n+n2+n),(n+n2+n+n-1));
     Su_vec = pow(Su_vec, 2);
-    cx_mat Su = diagmat(Su_vec);
+    mat Su = diagmat(Su_vec);
     
-    cx_vec Sb_vec = par_full.subvec((n+n2+n+n), (n+n2+n+n+n*(n+1))-1);
+    vec Sb_vec = par_full.subvec((n+n2+n+n), (n+n2+n+n+n*(n+1))-1);
     Sb_vec = pow(Sb_vec, 2);
-    cx_mat Sb = diagmat(Sb_vec);
+    mat Sb = diagmat(Sb_vec);
     
     
     // =============
     // set up independent variable
     // =============
     uword nu = U.n_rows;
-    cx_mat C;
+    mat C;
     
     if(U.n_cols > 1) {
-        C = cx_mat_byrow(par_full.subvec((n+n2+n+n+n*(n+1)), (n+n2+n+n+n*(n+1)+nu*n-1)), 
+        C = mat_byrow(par_full.subvec((n+n2+n+n+n*(n+1)), (n+n2+n+n+n*(n+1)+nu*n-1)), 
                       n, nu);
     }
     
-    cx_mat S;
-    cx_mat S_temp = zeros<cx_mat>(n, n*(n+1));
+    mat S;
+    mat S_temp = zeros<mat>(n, n*(n+1));
     S = join_rows(Se, S_temp);
-    S_temp = zeros<cx_mat>(n*(n+1), n);
+    S_temp = zeros<mat>(n*(n+1), n);
     S_temp = join_rows(S_temp, Sb);
     S = join_cols(S, S_temp);
     
-    cx_mat Z = join_rows(n_ident, zeros<cx_mat>(n, n*(n+1)));
+    mat Z = join_rows(n_ident, zeros<mat>(n, n*(n+1)));
     
     // =============
     // Initial unconditional values
     // =============
-    cx_vec x = conv_to<cx_vec>::from(X.col(0));
+    vec x = conv_to<vec>::from(X.col(0));
     
     
     // If the initial parameter values imply a stationary distribution, then the initial
@@ -157,19 +132,19 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
     // not, the initial value of PP given by the covariance matrix of the process error
     // variation (effectively assuming that the dominant eigenvalue of the system is 
     // zero).
-    cx_vec eigvals = eig_gen(B);
+    vec eigvals = eig_gen(B);
     vec eig_abs = abs(eigvals);
-    // is_cx = cx_present(conv_to<cx_mat>::from(eigvals));
+    // is_cx = present(conv_to<mat>::from(eigvals));
     // if(is_cx){
     //     return(LL);
     // }
 
-    cx_mat PP;
-    cx_mat PP_cx;
-    cx_mat B_cx = B;
-    cx_mat PP_k;
-    cx_mat PP_Se = Se;
-    cx_mat PP_dm;
+    mat PP;
+    mat PP_cx;
+    mat B_cx = B;
+    mat PP_k;
+    mat PP_Se = Se;
+    mat PP_dm;
     if(max(eig_abs) < 1){
         PP_k = kron(B_cx, B_cx);
         PP_Se.reshape(n*n,1);
@@ -177,7 +152,7 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
         PP_cx = inv(PP_dm - PP_k);
         PP_cx = PP_cx * PP_Se;
         PP_cx.reshape(n, n);
-        // is_cx = cx_present(PP_cx);
+        // is_cx = present(PP_cx);
         // if (is_cx){
         //     return(LL);
         // }
@@ -186,40 +161,40 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
         PP = Se;
     }
     
-    PP = join_rows(PP, zeros<cx_mat>(n, n*(n+1)));
-    cx_mat PP_Sb = join_rows(zeros<cx_mat>(n*(n+1), n), Sb);
+    PP = join_rows(PP, zeros<mat>(n, n*(n+1)));
+    mat PP_Sb = join_rows(zeros<mat>(n*(n+1), n), Sb);
     PP = join_cols(PP, PP_Sb);
     
-    cx_double logFt = 0;
-    cx_mat vFv = zeros<cx_mat>(1,1);
+    double logFt = 0;
+    mat vFv = zeros<mat>(1,1);
     
-    cx_mat BB;
-    cx_mat B12;
-    cx_mat B13;
-    cx_mat B13_cx;
-    cx_mat BB_temp;
-    cx_mat FF;
-    cx_mat invF;
-    cx_mat y;
-    cx_mat v;
-    cx_double logdetFF;
+    mat BB;
+    mat B12;
+    mat B13;
+    mat B13_cx;
+    mat BB_temp;
+    mat FF;
+    mat invF;
+    mat y;
+    mat v;
+    double logdetFF;
     for(uword t=1; t<Tmax; ++t){
         // PREDICTION EQUATIONS
         B12 = n_ident - B;
         B13 = x - B0;
         B13_cx = B13;
         B13_cx = kron(B13_cx.t(), n_ident);
-        // is_cx = cx_present(B13_cx);
+        // is_cx = present(B13_cx);
         // if (is_cx){
         //     return(LL);
         // }
         B13 = B13_cx;
         BB = join_rows(B, B12);
         BB = join_rows(BB, B13);
-        BB_temp = join_rows(zeros<cx_mat>(n, n), n_ident);
-        BB_temp = join_rows(BB_temp, zeros<cx_mat>(n, n2));
+        BB_temp = join_rows(zeros<mat>(n, n), n_ident);
+        BB_temp = join_rows(BB_temp, zeros<mat>(n, n2));
         BB = join_cols(BB, BB_temp);
-        BB = join_cols(BB, join_rows(zeros<cx_mat>(n2, 2*n), 
+        BB = join_cols(BB, join_rows(zeros<mat>(n2, 2*n), 
                                                  n2_ident));
         PP = BB * PP * BB.t() + S;
         if(U.n_cols < 2) {
@@ -237,7 +212,7 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
         if(!X.col(t).has_nan()){
             FF = Z * PP * Z.t() + Su;
             
-            logdetFF = cx_cpp_log_det(FF);
+            logdetFF = cpp_log_det(FF);
             // is_cx = logdetFF.imag() != 0;
             
             invF = inv(FF);
@@ -251,7 +226,7 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
             x = y.rows(0,(n-1));
             B0 = y.rows(n, (2*n-1));
 
-            B = cx_mat_byrow(y(span(2*n, (y.n_rows - 1)), 0), n, n);
+            B = mat_byrow(y(span(2*n, (y.n_rows - 1)), 0), n, n);
             
             // TERMS OF LIKELIHOOD FUNCTION
             
@@ -264,7 +239,7 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
     }
     
     // LL = logFt + vFv;
-    cx_mat LL_cx = logFt + vFv;
+    mat LL_cx = logFt + vFv;
     is_cx = cx_present(LL_cx);
     // std::cout << is_cx << endl;
     
@@ -272,11 +247,11 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
         std::cout << "here 1" << endl;
         LL = pow(10,10);
     } else {
-        cx_double LL_i = LL_cx(0,0);
+        double LL_i = LL_cx(0,0);
         LL = real(LL_i);
         // std::cout << LL << endl;
     }
-    // cx_double LL_i = LL_cx(0,0);
+    // double LL_i = LL_cx(0,0);
     // LL = real(LL_i);
     return LL;
 }

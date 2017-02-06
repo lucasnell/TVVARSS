@@ -13,6 +13,28 @@ source('./initial_testing_files/TVVARSS.ml.R')
 sourceCpp('TVVARSS.cpp')
 
 
+set.seed(99)
+R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), 
+                 par.fixed = par.fixed, method = "Nelder-Mead", 
+                 control = list(maxit = 10^2))
+set.seed(99)
+Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U),
+                    par_fixed = par.fixed, method = "Nelder-Mead",
+                    control = list(maxit = 10^2))
+
+all.equal(R_optim, Rcpp_optim)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # ------------------------

@@ -7,6 +7,8 @@ TVVARSS.ml <- function(par, X, U, par.fixed) {
     n <- dim(X)[1]
     Tmax <- dim(X)[2]
     
+    largenumber <-10.0^10
+    
     par.full <- par.fixed
     par.full[is.na(par.fixed)] <- par
     
@@ -82,6 +84,9 @@ TVVARSS.ml <- function(par, X, U, par.fixed) {
         if(!any(is.na(X[,t]))){
             
             FF <- Z %*% PP %*% t(Z) + Su
+            # "determinant(FF)$modulus[1]" gives the log of the determinant by default
+            logdetFF <- determinant(FF)$modulus[1]
+            if (logdetFF == -Inf) return(largenumber)
             invF <- solve(FF)
             
             y <- matrix(c(x, B0, t(B)), ncol=1)		
@@ -96,8 +101,7 @@ TVVARSS.ml <- function(par, X, U, par.fixed) {
             
             # TERMS OF LIKELIHOOD FUNCTION
             
-            # "determinant(FF)$modulus[1]" gives the log of the determinant by default
-            logdetFF <- determinant(FF)$modulus[1]
+
             # if (is.complex(logdetFF)){
             #     return(matrix(10^10))
             # }
@@ -107,9 +111,13 @@ TVVARSS.ml <- function(par, X, U, par.fixed) {
         }
     }
     
-    LL <- logFt + vFv
+    LL <- as.numeric(logFt + vFv)
     if (is.complex(LL)) {
-        LL <- matrix(10^10)
+        cat(LL, ' large \n')
+        # system(paste('echo', LL, '>> LLs.txt'))
+        LL <- largenumber
+    } else{
+        # cat(LL, '\n')
     }
     # show(c(LL,par.full[1:6]))
     # browser()

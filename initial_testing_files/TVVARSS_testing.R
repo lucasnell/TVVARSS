@@ -61,6 +61,23 @@ run_method <- function(method_type, language, seed = 1){
     return(z)
 }
 
+# mat <- diag(c(2,-1,1))
+# mat[1,3] <- 2i
+# determinant(mat)$modulus[1]
+# invmat <- solve(mat)
+# 
+# mat %*% invmat
+# 
+# load('./initial_testing_files/TVVARSS.ml_testing.RData')
+# 
+# 
+# str(R_optim[['NM']])
+# R_optim[['NM']]$par
+
+
+
+
+
 
 tv_t <- c(Sys.time())
 cpp_out <- lapply(c('Nelder-Mead', 'BFGS', 'bobyqa'), 
