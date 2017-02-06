@@ -7,30 +7,30 @@ using namespace arma;
 
 
 // Same as `determinant(FF)$modulus[1]` in R
-double cpp_log_det(arma::mat x) {
-    double y = arma::det(x);
+double cpp_log_det(mat x) {
+    double y = det(x);
     double z = std::abs(y);
     double log_z = std::log(z);
     return(log_z);
 }
 
 // Same as `determinant(FF)$modulus[1]` in R, using complex numbers
-arma::cx_double cx_cpp_log_det(arma::cx_mat x) {
-    arma::cx_double y = arma::det(x);
-    arma::cx_double z = std::abs(y);
-    arma::cx_double log_z = std::log(z);
+cx_double cx_cpp_log_det(cx_mat x) {
+    cx_double y = det(x);
+    cx_double z = std::abs(y);
+    cx_double log_z = std::log(z);
     return(log_z);
 }
 
 // Same as `matrix(x, byrow = TRUE)` in R
-arma::mat mat_byrow(arma::vec V, arma::uword nrow, arma::uword ncol) {
+mat mat_byrow(vec V, uword nrow, uword ncol) {
     if(V.n_elem != (nrow * ncol)){
         Rcpp::stop("Length of V != nrow * ncol");
     }
-    arma::mat M = arma::zeros(nrow, ncol);
-    arma::mat row_iter;
-    arma::uword j = 0;
-    for(arma::uword i=0; i<nrow; ++i) {
+    mat M = zeros(nrow, ncol);
+    mat row_iter;
+    uword j = 0;
+    for(uword i=0; i<nrow; ++i) {
         row_iter = V.subvec(j, (j + ncol - 1));
         row_iter.reshape(1,ncol);
         M.row(i) = row_iter;
@@ -40,14 +40,14 @@ arma::mat mat_byrow(arma::vec V, arma::uword nrow, arma::uword ncol) {
 }
 
 // Same as `matrix(x, byrow = TRUE)` in R, using complex numbers
-arma::cx_mat cx_mat_byrow(arma::cx_vec V, arma::uword nrow, arma::uword ncol) {
+cx_mat cx_mat_byrow(cx_vec V, uword nrow, uword ncol) {
     if(V.n_elem != (nrow * ncol)){
         Rcpp::stop("Length of V != nrow * ncol");
     }
-    arma::cx_mat M = arma::zeros<arma::cx_mat>(nrow, ncol);
-    arma::cx_mat row_iter;
-    arma::uword j = 0;
-    for(arma::uword i=0; i<nrow; ++i) {
+    cx_mat M = zeros<cx_mat>(nrow, ncol);
+    cx_mat row_iter;
+    uword j = 0;
+    for(uword i=0; i<nrow; ++i) {
         row_iter = V.subvec(j, (j + ncol - 1));
         row_iter.reshape(1,ncol);
         M.row(i) = row_iter;
@@ -58,14 +58,14 @@ arma::cx_mat cx_mat_byrow(arma::cx_vec V, arma::uword nrow, arma::uword ncol) {
 
 
 // Checks if there's a complex number in a matrix
-bool cx_present(arma::cx_mat M){
-    const arma::cx_mat& cM = M;
-    arma::uword nrow = M.n_rows;
-    arma::uword ncol = M.n_cols;
+bool cx_present(cx_mat M){
+    const cx_mat& cM = M;
+    uword nrow = M.n_rows;
+    uword ncol = M.n_cols;
     double im;
     bool out = false;
-    for (arma::uword i=0; i<nrow; ++i){
-        for (arma::uword j=0; j<ncol; ++j){
+    for (uword i=0; i<nrow; ++i){
+        for (uword j=0; j<ncol; ++j){
             im = cM(i,j).imag();
             if(im != 0){
                 out = true;
@@ -81,75 +81,75 @@ bool cx_present(arma::cx_mat M){
 
 
 // [[Rcpp::export]]
-arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_fixed) {
+mat cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
     
     // Defining output type now, in case of complex numbers
-    arma::mat LL = arma::zeros(1,1);
+    mat LL = zeros(1,1);
     LL(0,0) = std::pow(10,10);
     // This may be used more than once, but definitely will be used at the end
     bool is_cx;
     
     // Note: X and U are transposed, so time runs through columns
-    arma::uword n = X.n_rows;
-    arma::uword Tmax = X.n_cols;
+    uword n = X.n_rows;
+    uword Tmax = X.n_cols;
     
     // Identity matrix of size n by n
-    arma::cx_mat n_ident = arma::eye<arma::cx_mat>(n,n);
+    cx_mat n_ident = eye<cx_mat>(n,n);
     // And for n^2 by n^2
-    arma::sword n2 = std::pow(n,2);
-    arma::cx_mat n2_ident = arma::eye<arma::cx_mat>(n2,n2);
+    sword n2 = std::pow(n,2);
+    cx_mat n2_ident = eye<cx_mat>(n2,n2);
     
-    arma::cx_vec par_full = arma::conv_to<arma::cx_vec>::from(par_fixed);
-    arma::uvec par_nas = arma::find_nonfinite(par_fixed);
-    par_full.elem(par_nas) = arma::conv_to<arma::cx_vec>::from(par);
+    cx_vec par_full = conv_to<cx_vec>::from(par_fixed);
+    uvec par_nas = find_nonfinite(par_fixed);
+    par_full.elem(par_nas) = conv_to<cx_vec>::from(par);
     
     // =============
     // set up coefficient matrices
     // =============
     
-    arma::cx_mat B0;
+    cx_mat B0;
     B0.insert_cols(0, par_full.subvec(0,n-1));
     B0.reshape(n, 1);
     
-    arma::cx_mat B = cx_mat_byrow(par_full.subvec(n, (n + n2 - 1)), n, n);
+    cx_mat B = cx_mat_byrow(par_full.subvec(n, (n + n2 - 1)), n, n);
     
-    arma::cx_vec Se_vec = par_full.subvec((n+n2),(n+n2+n-1));
-    Se_vec = arma::pow(Se_vec, 2);
-    arma::cx_mat Se = arma::diagmat(Se_vec);
+    cx_vec Se_vec = par_full.subvec((n+n2),(n+n2+n-1));
+    Se_vec = pow(Se_vec, 2);
+    cx_mat Se = diagmat(Se_vec);
     
-    arma::cx_vec Su_vec = par_full.subvec((n+n2+n),(n+n2+n+n-1));
-    Su_vec = arma::pow(Su_vec, 2);
-    arma::cx_mat Su = arma::diagmat(Su_vec);
+    cx_vec Su_vec = par_full.subvec((n+n2+n),(n+n2+n+n-1));
+    Su_vec = pow(Su_vec, 2);
+    cx_mat Su = diagmat(Su_vec);
     
-    arma::cx_vec Sb_vec = par_full.subvec((n+n2+n+n), (n+n2+n+n+n*(n+1))-1);
-    Sb_vec = arma::pow(Sb_vec, 2);
-    arma::cx_mat Sb = arma::diagmat(Sb_vec);
+    cx_vec Sb_vec = par_full.subvec((n+n2+n+n), (n+n2+n+n+n*(n+1))-1);
+    Sb_vec = pow(Sb_vec, 2);
+    cx_mat Sb = diagmat(Sb_vec);
     
     
     // =============
     // set up independent variable
     // =============
-    arma::uword nu = U.n_rows;
-    arma::cx_mat C;
+    uword nu = U.n_rows;
+    cx_mat C;
     
     if(U.n_cols > 1) {
         C = cx_mat_byrow(par_full.subvec((n+n2+n+n+n*(n+1)), (n+n2+n+n+n*(n+1)+nu*n-1)), 
                       n, nu);
     }
     
-    arma::cx_mat S;
-    arma::cx_mat S_temp = arma::zeros<arma::cx_mat>(n, n*(n+1));
-    S = arma::join_rows(Se, S_temp);
-    S_temp = arma::zeros<arma::cx_mat>(n*(n+1), n);
-    S_temp = arma::join_rows(S_temp, Sb);
-    S = arma::join_cols(S, S_temp);
+    cx_mat S;
+    cx_mat S_temp = zeros<cx_mat>(n, n*(n+1));
+    S = join_rows(Se, S_temp);
+    S_temp = zeros<cx_mat>(n*(n+1), n);
+    S_temp = join_rows(S_temp, Sb);
+    S = join_cols(S, S_temp);
     
-    arma::cx_mat Z = arma::join_rows(n_ident, arma::zeros<arma::cx_mat>(n, n*(n+1)));
+    cx_mat Z = join_rows(n_ident, zeros<cx_mat>(n, n*(n+1)));
     
     // =============
     // Initial unconditional values
     // =============
-    arma::cx_vec x = arma::conv_to<arma::cx_vec>::from(X.col(0));
+    cx_vec x = conv_to<cx_vec>::from(X.col(0));
     
     
     // If the initial parameter values imply a stationary distribution, then the initial
@@ -157,24 +157,24 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     // not, the initial value of PP given by the covariance matrix of the process error
     // variation (effectively assuming that the dominant eigenvalue of the system is 
     // zero).
-    arma::cx_vec eigvals = arma::eig_gen(B);
-    arma::vec eig_abs = abs(eigvals);
-    // is_cx = cx_present(arma::conv_to<arma::cx_mat>::from(eigvals));
+    cx_vec eigvals = eig_gen(B);
+    vec eig_abs = abs(eigvals);
+    // is_cx = cx_present(conv_to<cx_mat>::from(eigvals));
     // if(is_cx){
     //     return(LL);
     // }
 
-    arma::cx_mat PP;
-    arma::cx_mat PP_cx;
-    arma::cx_mat B_cx = B;
-    arma::cx_mat PP_k;
-    arma::cx_mat PP_Se = Se;
-    arma::cx_mat PP_dm;
+    cx_mat PP;
+    cx_mat PP_cx;
+    cx_mat B_cx = B;
+    cx_mat PP_k;
+    cx_mat PP_Se = Se;
+    cx_mat PP_dm;
     if(max(eig_abs) < 1){
-        PP_k = arma::kron(B_cx, B_cx);
+        PP_k = kron(B_cx, B_cx);
         PP_Se.reshape(n*n,1);
         PP_dm = n2_ident;
-        PP_cx = arma::inv(PP_dm - PP_k);
+        PP_cx = inv(PP_dm - PP_k);
         PP_cx = PP_cx * PP_Se;
         PP_cx.reshape(n, n);
         // is_cx = cx_present(PP_cx);
@@ -186,40 +186,40 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         PP = Se;
     }
     
-    PP = arma::join_rows(PP, arma::zeros<arma::cx_mat>(n, n*(n+1)));
-    arma::cx_mat PP_Sb = arma::join_rows(arma::zeros<arma::cx_mat>(n*(n+1), n), Sb);
-    PP = arma::join_cols(PP, PP_Sb);
+    PP = join_rows(PP, zeros<cx_mat>(n, n*(n+1)));
+    cx_mat PP_Sb = join_rows(zeros<cx_mat>(n*(n+1), n), Sb);
+    PP = join_cols(PP, PP_Sb);
     
-    arma::cx_double logFt = 0;
-    arma::cx_mat vFv = arma::zeros<arma::cx_mat>(1,1);
+    cx_double logFt = 0;
+    cx_mat vFv = zeros<cx_mat>(1,1);
     
-    arma::cx_mat BB;
-    arma::cx_mat B12;
-    arma::cx_mat B13;
-    arma::cx_mat B13_cx;
-    arma::cx_mat BB_temp;
-    arma::cx_mat FF;
-    arma::cx_mat invF;
-    arma::cx_mat y;
-    arma::cx_mat v;
-    arma::cx_double logdetFF;
-    for(arma::uword t=1; t<Tmax; ++t){
+    cx_mat BB;
+    cx_mat B12;
+    cx_mat B13;
+    cx_mat B13_cx;
+    cx_mat BB_temp;
+    cx_mat FF;
+    cx_mat invF;
+    cx_mat y;
+    cx_mat v;
+    cx_double logdetFF;
+    for(uword t=1; t<Tmax; ++t){
         // PREDICTION EQUATIONS
         B12 = n_ident - B;
         B13 = x - B0;
         B13_cx = B13;
-        B13_cx = arma::kron(B13_cx.t(), n_ident);
+        B13_cx = kron(B13_cx.t(), n_ident);
         // is_cx = cx_present(B13_cx);
         // if (is_cx){
         //     return(LL);
         // }
         B13 = B13_cx;
-        BB = arma::join_rows(B, B12);
-        BB = arma::join_rows(BB, B13);
-        BB_temp = arma::join_rows(arma::zeros<arma::cx_mat>(n, n), n_ident);
-        BB_temp = arma::join_rows(BB_temp, arma::zeros<arma::cx_mat>(n, n2));
-        BB = arma::join_cols(BB, BB_temp);
-        BB = arma::join_cols(BB, arma::join_rows(arma::zeros<arma::cx_mat>(n2, 2*n), 
+        BB = join_rows(B, B12);
+        BB = join_rows(BB, B13);
+        BB_temp = join_rows(zeros<cx_mat>(n, n), n_ident);
+        BB_temp = join_rows(BB_temp, zeros<cx_mat>(n, n2));
+        BB = join_cols(BB, BB_temp);
+        BB = join_cols(BB, join_rows(zeros<cx_mat>(n2, 2*n), 
                                                  n2_ident));
         PP = BB * PP * BB.t() + S;
         if(U.n_cols < 2) {
@@ -236,9 +236,9 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
         
         if(!X.col(t).has_nan()){
             FF = Z * PP * Z.t() + Su;
-            invF = arma::inv(FF);
-            y = arma::join_cols(arma::vectorise(x), arma::vectorise(B0));
-            y = arma::join_cols(y, arma::vectorise(B.t()));
+            invF = inv(FF);
+            y = join_cols(vectorise(x), vectorise(B0));
+            y = join_cols(y, vectorise(B.t()));
             v = X.col(t) - Z * y;
             
             y = y + PP * Z.t() * invF * v;
@@ -261,12 +261,12 @@ arma::mat cpp_TVVARSS_ml(arma::vec par, arma::mat X, arma::mat U, arma::vec par_
     }
     
     // LL = logFt + vFv;
-    arma::cx_mat LL_cx = logFt + vFv;
+    cx_mat LL_cx = logFt + vFv;
     is_cx = cx_present(LL_cx);
     if (is_cx){
         return(LL);
     }
-    LL = arma::conv_to<arma::mat>::from(LL_cx);
+    LL = conv_to<mat>::from(LL_cx);
     
     return(LL);
 }

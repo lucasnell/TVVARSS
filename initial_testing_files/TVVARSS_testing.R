@@ -77,7 +77,3 @@ names(R_out) <- c('Nelder-Mead', 'BFGS', 'bobyqa')
 # X is saved so I can show output from failed run of TVVARSS
 save(cpp_out, R_out, tv_t, X, file = './initial_testing_files/TVVARSS_testing.RData')
 
-
-
-
-
