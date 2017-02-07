@@ -1,22 +1,52 @@
 TVVARSS
 ========
 
-Time-varying vector autoregressive state-space model
---------
+##### Time-varying vector autoregressive state-space model
 
-Initial code by Anthony Ives
 
-Implementation in C++ by Lucas Nell
+### This folder
 
-The main files in this repository are the following:
+The files in this folder include the following:
 
-- `TVVARSS.cpp`: C++ version of the `TVVARSS.ml` function
-- `TVVARSS_cpp.R`: the `cpp_TVVARSS` function that uses the C++ version of `TVVARSS.ml`
-- `TVVARSS_sim_test.R`: very preliminary tests of `cpp_TVVARSS`
+- [`TVVARSS.cpp`](./TVVARSS.cpp): 
+  C++ version of the `TVVARSS.ml` function (`cpp_TVVARSS_ml`)
+- [`TVVARSS_cpp.R`](./TVVARSS_cpp.R): 
+  the C++ version of `TVVARSS` (`cpp_TVVARSS`) that uses `cpp_TVVARSS_ml`
+- [`TVVARSS_testing.Rmd`](./TVVARSS_testing.Rmd): 
+  comparisons of C++ to R versions of `TVVARSS` and `TVVARSS.ml` functions
+- [`TVVARSS_testing.md`](./TVVARSS_testing.md): 
+  output from the above .Rmd file (*this is the one to view on GitHub*)
 
-The `initial_testing_files` folder contains files used in the entirely R version of 
-TVVARSS and in testing the C++ version.
 
-The C++ implementation used the "Armadillo" C++ library and interfaced with R using
+
+
+### `test_files` subfolder
+
+
+The `test_files` folder contains the following files:
+
+- [`TVVARSS.ml.R`](./test_files/TVVARSS.ml.R):
+  current version of the inner function `TVVARSS.ml`, used for testing
+- [`TVVARSS.ml_pars.R`](./test_files/TVVARSS.ml_pars.R):
+  initial setup of parameters used to test `TVVARSS.ml`
+- [`TVVARSS.ml_testing.R`](./test_files/TVVARSS.ml_testing.R):
+  testing of R and C++ versions of `TVVARSS.ml` function
+- [`TVVARSS.ml_testing.RData`](./test_files/TVVARSS.ml_testing.RData):
+  resulting objects from tests of R and C++ versions of `TVVARSS.ml` function
+- [`TVVARSS_forC_17Dec16.R`](./test_files/TVVARSS_forC_17Dec16.R):
+  original R version of `TVVARSS` used for comparison to C++ version
+- [`TVVARSS_sim_test_17Dec16.R`](./test_files/TVVARSS_sim_test_17Dec16.R):
+  initial simulation test conducted on the original R version by ARI
+- [`TVVARSS_testing.R`](./test_files/TVVARSS_testing.R):
+  tests comparing output from R and C++ versions of `TVVARSS`
+- [`TVVARSS_testing.RData`](./test_files/TVVARSS_testing.RData):
+  resulting objects from tests comparing output from R and C++ versions of `TVVARSS`
+
+
+
+
+### Libraries and packages
+
+The C++ implementation uses the "Armadillo" C++ library and interfaces with R using
 the packages `Rcpp` and `RcppArmadillo`.
 

@@ -6,10 +6,10 @@ library(GenSA)
 library(minqa)
 
 # File creating parameters necessary to test TVVARSS.ml and cpp_TVVARSS_ml
-source('./initial_testing_files/TVVARSS.ml_pars.R')
+source('./test_files/TVVARSS.ml_pars.R')
 
 # R and C++ versions of TVVARSS.ml (functions `TVVARSS.ml` and `cpp_TVVARSS_ml`, resp.)
-source('./initial_testing_files/TVVARSS.ml.R')
+source('./test_files/TVVARSS.ml.R')
 sourceCpp('TVVARSS.cpp')
 
 # 
@@ -185,7 +185,7 @@ summary_output(R_GenSA, Rcpp_GenSA, tv.ml_t[10:12])
 # Saving objects for results in ../TVVARSS_testing.Rmd/md
 
 save(R_optim, Rcpp_optim, R_GenSA, Rcpp_GenSA, tv.ml_t, summary_output,
-     file = './initial_testing_files/TVVARSS.ml_testing.RData')
+     file = './test_files/TVVARSS.ml_testing.RData')
 
 
 

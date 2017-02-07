@@ -2,7 +2,7 @@
 # Output used in ../TVVARSS_testing.Rmd
 
 
-source('./initial_testing_files/TVVARSS_forC_17Dec16.R')
+source('./test_files/TVVARSS_forC_17Dec16.R')
 source('TVVARSS_cpp.R')
 
 
@@ -77,5 +77,5 @@ names(cpp_out) <- c('Nelder-Mead', 'BFGS', 'bobyqa')
 names(R_out) <- c('Nelder-Mead', 'BFGS', 'bobyqa')
 
 # X is saved so I can show output from failed run of TVVARSS
-save(cpp_out, R_out, tv_t, X, file = './initial_testing_files/TVVARSS_testing.RData')
+save(cpp_out, R_out, tv_t, X, file = './test_files/TVVARSS_testing.RData')
 

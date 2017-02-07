@@ -8,7 +8,7 @@ output: github_document
 ```{r setup, include = FALSE, cache = FALSE}
 knitr::opts_chunk$set(comment = NA, error = TRUE, echo = FALSE)
 library(GenSA)
-load('./initial_testing_files/TVVARSS.ml_testing.RData')
+load('./test_files/TVVARSS.ml_testing.RData')
 ```
 
 
@@ -16,10 +16,10 @@ This document outlines the results of the following:
 
 1. Using optimization and simulated annealing on `TVVARSS.ml` and `cpp_TVVARSS_ml`. The
 code to conduct these tests is in 
-[this file](./initial_testing_files/TVVARSS.ml_testing.R).
+[this file](./test_files/TVVARSS.ml_testing.R).
 2. Overall output from `TVVARSS` and `cpp_TVVARSS`. The
 code to conduct these tests is in 
-[this file](./initial_testing_files/TVVARSS_testing.R).
+[this file](./test_files/TVVARSS_testing.R).
 
 Comparisons between R and C++ versions used the `all.equal` function, which tests for
 'near equality'. The tolerance for near equality is 
@@ -66,8 +66,8 @@ annealing, to see how output and performance compared.
 Times below are for the 6 total runs for each version of `TVVARSS`:
 
 ```{r}
-source('./initial_testing_files/TVVARSS_forC_17Dec16.R')
-load('./initial_testing_files/TVVARSS_testing.RData')
+source('./test_files/TVVARSS_forC_17Dec16.R')
+load('./test_files/TVVARSS_testing.RData')
 cat(paste(
     sprintf('R version took %s minutes',
             round(as.numeric(tv_t[3] - tv_t[2], units = 'mins'), 2)),

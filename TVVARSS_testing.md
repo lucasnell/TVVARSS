@@ -5,8 +5,8 @@ Lucas Nell
 
 This document outlines the results of the following:
 
-1.  Using optimization and simulated annealing on `TVVARSS.ml` and `cpp_TVVARSS_ml`. The code to conduct these tests is in [this file](./initial_testing_files/TVVARSS.ml_testing.R).
-2.  Overall output from `TVVARSS` and `cpp_TVVARSS`. The code to conduct these tests is in [this file](./initial_testing_files/TVVARSS_testing.R).
+1.  Using optimization and simulated annealing on `TVVARSS.ml` and `cpp_TVVARSS_ml`. The code to conduct these tests is in [this file](./test_files/TVVARSS.ml_testing.R).
+2.  Overall output from `TVVARSS` and `cpp_TVVARSS`. The code to conduct these tests is in [this file](./test_files/TVVARSS_testing.R).
 
 Comparisons between R and C++ versions used the `all.equal` function, which tests for 'near equality'. The tolerance for near equality is 1.49 × 10<sup>−8</sup>.
 
