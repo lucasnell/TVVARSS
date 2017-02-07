@@ -106,8 +106,6 @@ cat(paste(
     collapse = '\n'),
     sep = '\n'))
 ```
-R and C++ versions had output all within $`r signif(sqrt(.Machine$double.eps),3)`$
-of each other.
 
 #### No annealing
 ```{r}
@@ -118,10 +116,10 @@ cat(paste(
     sep = '\n'))
 ```
 This looks weird because the R version here had an error, so returned `NULL`.
-Below is the error returned and the output from `traceback()` run afterward::
+Below is the error returned and the output from `traceback()` run afterward:
 ```{r}
 # Error message pasted from running the following:
-# e_run <- TVVARSS(X, Tsamplefract = 0.9, method = 'BFGS', show.fig = FALSE, 
+# e_run <- TVVARSS(X, Tsamplefract = 0.9, method = 'BFGS', show.fig = FALSE,
 #                  annealing = FALSE)
 cat(paste('Error in solve.default(FF) : 
   system is computationally singular: reciprocal condition number = 3.97576e-17\n\n'))

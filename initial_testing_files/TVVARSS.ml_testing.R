@@ -12,20 +12,31 @@ source('./initial_testing_files/TVVARSS.ml_pars.R')
 source('./initial_testing_files/TVVARSS.ml.R')
 sourceCpp('TVVARSS.cpp')
 
-
-set.seed(99)
-R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), 
-                 par.fixed = par.fixed, method = "Nelder-Mead", 
-                 control = list(maxit = 10^2))
-set.seed(99)
-Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U),
-                    par_fixed = par.fixed, method = "Nelder-Mead",
-                    control = list(maxit = 10^2))
-
-all.equal(R_optim, Rcpp_optim)
-
-
-
+# 
+# set.seed(99)
+# R_optim <- optim(fn = TVVARSS.ml, par = par, X = t(X), U = t(U), 
+#                  par.fixed = par.fixed, method = "Nelder-Mead", 
+#                  control = list(maxit = 10^2))
+# set.seed(99)
+# Rcpp_optim <- optim(fn = cpp_TVVARSS_ml, par = par, X = t(X), U = t(U),
+#                     par_fixed = par.fixed, method = "Nelder-Mead",
+#                     control = list(maxit = 10^2))
+# 
+# all.equal(R_optim, Rcpp_optim)
+# 
+# 
+# 
+# set.seed(1)
+# R_GenSA <- GenSA(fn = TVVARSS.ml, par = par, lower = par.lower, upper = par.upper,
+#                  X = t(X), U = t(U), par.fixed = par.fixed,
+#                  control=list(smooth = F, maxit = maxit.SANN))
+# 
+# set.seed(1)
+# Rcpp_GenSA <- GenSA(fn = cpp_TVVARSS_ml, par = par, lower = par.lower, upper = par.upper,
+#                     X = t(X), U = t(U), par_fixed = par.fixed,
+#                     control=list(smooth = F, maxit = maxit.SANN))
+# 
+# all.equal(R_GenSA, Rcpp_GenSA)
 
 
 
@@ -46,6 +57,10 @@ TVVARSS.ml(par = par, X = t(X), U = t(U), par.fixed = par.fixed)
 
 cpp_TVVARSS_ml(par = par, X = t(X), U = matrix(), par_fixed = par.fixed)
 TVVARSS.ml(par = par, X = t(X), U = NULL, par.fixed = par.fixed)
+
+
+
+
 
 
 # ------------------------
@@ -135,7 +150,7 @@ tv.ml_t[12] <- Sys.time()
 message(sprintf('Total time taken: %s minutes',
                 round(as.numeric(tail(tv.ml_t, 1) - tv.ml_t[1], units = 'mins'), 2)))
 
-
+system('terminal-notifier -message DONE -title "R Script"')
 
 
 

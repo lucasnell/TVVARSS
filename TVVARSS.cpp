@@ -114,15 +114,15 @@ double cpp_TVVARSS_ml(vec par, mat X, mat U, vec par_fixed) {
     cx_mat B = cx_mat_byrow(par_full.subvec(n, (n + n2 - 1)), n, n);
     
     cx_vec Se_vec = par_full.subvec((n+n2),(n+n2+n-1));
-    Se_vec = pow(Se_vec, 2);
+    Se_vec = square(Se_vec);
     cx_mat Se = diagmat(Se_vec);
     
     cx_vec Su_vec = par_full.subvec((n+n2+n),(n+n2+n+n-1));
-    Su_vec = pow(Su_vec, 2);
+    Su_vec = square(Su_vec);
     cx_mat Su = diagmat(Su_vec);
     
     cx_vec Sb_vec = par_full.subvec((n+n2+n+n), (n+n2+n+n+n*(n+1))-1);
-    Sb_vec = pow(Sb_vec, 2);
+    Sb_vec = square(Sb_vec);
     cx_mat Sb = diagmat(Sb_vec);
     
     

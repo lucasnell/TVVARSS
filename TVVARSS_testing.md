@@ -1,7 +1,7 @@
 Testing `TVVARSS`
 ================
 Lucas Nell
-2017-01-13
+2017-02-07
 
 This document outlines the results of the following:
 
@@ -18,50 +18,48 @@ Optimization
 
 #### Using `optim(..., method = 'Nelder-Mead')`
 
-    R version took 1 minutes
-    Rcpp version took 0.01 minutes
+    R version took 0.99 minutes
+    Rcpp version took 0.04 minutes
 
     Are they equal?
-    Component "par": Mean relative difference: 0.244417
-    Component "value": Mean relative difference: 0.04055309
-    Component "counts": Mean relative difference: 0.886023
+    TRUE
 
 #### Using `optim(..., method = 'BFGS')`
 
-    R version took 2.92 minutes
-    Rcpp version took 0.02 minutes
+    R version took 3.1 minutes
+    Rcpp version took 0.03 minutes
 
     Are they equal?
-    Component "par": Mean relative difference: 2.608607
-    Component "value": Mean relative difference: 2.524436
-    Component "counts": Mean relative difference: 0.872134
+    Component "par": Mean relative difference: 2.466744
+    Component "value": Mean relative difference: 1.639933
+    Component "counts": Mean relative difference: 0.8042328
 
 #### Using `bobyqa(...)`
 
-    R version took 0.45 minutes
-    Rcpp version took 0.01 minutes
+    R version took 0.47 minutes
+    Rcpp version took 0.02 minutes
 
     Are they equal?
-    Component "par": Mean relative difference: 0.0001922985
-    Component "fval": Mean relative difference: 0.002921203
-    Component "feval": Mean relative difference: 0.6392727
+    Component "par": Mean relative difference: 0.0003638024
+    Component "fval": Mean relative difference: 0.001088931
+    Component "feval": Mean relative difference: 0.2065455
 
 Simulated annealing
 -------------------
 
-    R version took 8.98 minutes
-    Rcpp version took 0.58 minutes
+    R version took 8.17 minutes
+    Rcpp version took 0.35 minutes
 
     Are they equal?
-    Component "trace.mat": Mean relative difference: 2.694283e-08
+    Component "trace.mat": Mean relative difference: 2.740943e-08
 
 Overall output from `TVVARSS` and `cpp_TVVARSS`
 ===============================================
 
 Methods `'Nelder-Mead'`, `'BFGS'`, and `'bobyqa'` were run, with and without simulated annealing, to see how output and performance compared. Times below are for the 6 total runs for each version of `TVVARSS`:
 
-    R version took 96.69 minutes
-    cpp version took 4.05 minutes
+    R version took 49.35 minutes
+    cpp version took 2.21 minutes
 
 Using `method = 'Nelder-Mead'`
 ------------------------------
@@ -69,38 +67,12 @@ Using `method = 'Nelder-Mead'`
 #### With annealing
 
     Are they equal?
-    Component "se": Mean relative difference: 7.369287e-06
-    Component "su": Mean relative difference: 3.267878e-05
-    Component "Sb0": Mean relative difference: 3.174063e-06
-    Component "Sb": Mean relative difference: 7.188568e-06
-    Component "B0": Mean relative difference: 1.604839e-05
-    Component "B": Mean relative difference: 7.586208e-06
-    Component "logLik": Mean relative difference: 2.343666e-06
-    Component "AIC": Mean relative difference: 2.22845e-06
-    Component "B0.fitted": Mean relative difference: 0.00202612
-    Component "B.fitted": Mean relative difference: 0.00227323
-    Component "X.fitted": Mean relative difference: 0.0001535365
-    Component "PP.fitted": Mean relative difference: 0.001932475
-    Component "eigen.fitted": Mean relative Mod difference: 0.002329896
-    Component "opt.par": Mean relative difference: 9.404633e-06
+    TRUE
 
 #### No annealing
 
     Are they equal?
-    Component "se": Mean relative difference: 0.07513969
-    Component "su": Mean relative difference: 1.289825
-    Component "Sb0": Mean relative difference: 0.6557525
-    Component "Sb": Mean relative difference: 0.8638878
-    Component "B0": Mean relative difference: 0.2299503
-    Component "B": Mean relative difference: 0.1497434
-    Component "logLik": Mean relative difference: 0.005663374
-    Component "AIC": Mean relative difference: 0.005226255
-    Component "B0.fitted": Mean relative difference: 1.122417
-    Component "B.fitted": Mean relative difference: 0.2494728
-    Component "X.fitted": Mean relative difference: 0.05635341
-    Component "PP.fitted": Mean relative difference: 0.8868769
-    Component "eigen.fitted": Mean relative Mod difference: 0.1633977
-    Component "opt.par": Mean relative difference: 0.2691596
+    TRUE
 
 Using `method = 'BFGS'`
 -----------------------
@@ -109,8 +81,6 @@ Using `method = 'BFGS'`
 
     Are they equal?
     TRUE
-
-R and C++ versions had output all within 1.49 × 10<sup>−8</sup> of each other.
 
 #### No annealing
 
@@ -124,7 +94,7 @@ R and C++ versions had output all within 1.49 × 10<sup>−8</sup> of each o
     Attributes: < current is not list-like >
     current is not list-like
 
-This looks weird because the R version here had an error, so returned `NULL`. Below is the error returned and the output from `traceback()` run afterward::
+This looks weird because the R version here had an error, so returned `NULL`. Below is the error returned and the output from `traceback()` run afterward:
 
     Error in solve.default(FF) : 
       system is computationally singular: reciprocal condition number = 3.97576e-17
@@ -149,36 +119,36 @@ Using `method = 'bobyqa'`
 #### With annealing
 
     Are they equal?
-    Component "se": Mean relative difference: 0.2280353
-    Component "su": Mean relative difference: 0.03555844
-    Component "Sb0": Mean relative difference: 0.06097886
-    Component "Sb": Mean relative difference: 0.3197025
-    Component "B0": Mean relative difference: 0.1698673
-    Component "B": Mean relative difference: 0.57555
-    Component "logLik": Mean relative difference: 0.06561574
-    Component "AIC": Mean relative difference: 0.06239371
-    Component "B0.fitted": Mean relative difference: 0.5248492
-    Component "B.fitted": Mean relative difference: 0.9133515
-    Component "X.fitted": Mean relative difference: 0.05170573
-    Component "PP.fitted": Mean relative difference: 0.6607509
+    Component "se": Mean relative difference: 0.06499206
+    Component "su": Mean relative difference: 0.02594734
+    Component "Sb0": Mean relative difference: 0.01249422
+    Component "Sb": Mean relative difference: 0.1126508
+    Component "B0": Mean relative difference: 0.02988222
+    Component "B": Mean relative difference: 0.08901546
+    Component "logLik": Mean relative difference: 0.01867835
+    Component "AIC": Mean relative difference: 0.01768283
+    Component "B0.fitted": Mean relative difference: 0.4543676
+    Component "B.fitted": Mean relative difference: 0.4304262
+    Component "X.fitted": Mean relative difference: 0.04126096
+    Component "PP.fitted": Mean relative difference: 0.4624978
     Component "eigen.fitted": Modes: complex, numeric
-    Component "eigen.fitted": Mean relative Mod difference: 0.8285955
-    Component "opt.par": Mean relative difference: 0.2463107
+    Component "eigen.fitted": Mean relative Mod difference: 0.3038433
+    Component "opt.par": Mean relative difference: 0.04722132
 
 #### No annealing
 
     Are they equal?
-    Component "se": Mean relative difference: 0.01664413
-    Component "su": Mean relative difference: 0.3265023
-    Component "Sb0": Mean relative difference: 0.9173934
-    Component "Sb": Mean relative difference: 0.2940105
-    Component "B0": Mean relative difference: 2.451531
-    Component "B": Mean relative difference: 0.08640339
-    Component "logLik": Mean relative difference: 0.01676588
-    Component "AIC": Mean relative difference: 0.01547324
-    Component "B0.fitted": Mean relative difference: 0.9571879
-    Component "B.fitted": Mean relative difference: 0.4245081
-    Component "X.fitted": Mean relative difference: 0.007991256
-    Component "PP.fitted": Mean relative difference: 0.8627313
-    Component "eigen.fitted": Mean relative Mod difference: 0.502622
-    Component "opt.par": Mean relative difference: 0.2287242
+    Component "se": Mean relative difference: 0.01180563
+    Component "su": Mean relative difference: 1.253447
+    Component "Sb0": Mean relative difference: 7.997683
+    Component "Sb": Mean relative difference: 0.02654061
+    Component "B0": Mean relative difference: 1.861446
+    Component "B": Mean relative difference: 0.02131687
+    Component "logLik": Mean relative difference: 0.001173521
+    Component "AIC": Mean relative difference: 0.001081522
+    Component "B0.fitted": Mean relative difference: 1.790884
+    Component "B.fitted": Mean relative difference: 0.1685675
+    Component "X.fitted": Mean relative difference: 0.01180828
+    Component "PP.fitted": Mean relative difference: 0.2763867
+    Component "eigen.fitted": Mean relative Mod difference: 0.2197468
+    Component "opt.par": Mean relative difference: 0.07720379

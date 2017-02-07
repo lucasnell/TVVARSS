@@ -61,32 +61,17 @@ run_method <- function(method_type, language, seed = 1){
     return(z)
 }
 
-# mat <- diag(c(2,-1,1))
-# mat[1,3] <- 2i
-# determinant(mat)$modulus[1]
-# invmat <- solve(mat)
-# 
-# mat %*% invmat
-# 
-# load('./initial_testing_files/TVVARSS.ml_testing.RData')
-# 
-# 
-# str(R_optim[['NM']])
-# R_optim[['NM']]$par
 
-
-
-
-
+library(parallel)
 
 tv_t <- c(Sys.time())
-cpp_out <- lapply(c('Nelder-Mead', 'BFGS', 'bobyqa'), 
-                  function(x){run_method(x, 'cpp')})
+cpp_out <- mclapply(c('Nelder-Mead', 'BFGS', 'bobyqa'), 
+                  function(x){run_method(x, 'cpp')}, mc.cores = 3)
 tv_t[2] <- Sys.time()
-R_out <- lapply(c('Nelder-Mead', 'BFGS', 'bobyqa'), 
-                function(x){run_method(x, 'R')})
+R_out <- mclapply(c('Nelder-Mead', 'BFGS', 'bobyqa'), 
+                function(x){run_method(x, 'R')}, mc.cores = 3)
 tv_t[3] <- Sys.time()
-
+system('terminal-notifier -message DONE -title "R Script"')
 
 names(cpp_out) <- c('Nelder-Mead', 'BFGS', 'bobyqa')
 names(R_out) <- c('Nelder-Mead', 'BFGS', 'bobyqa')
