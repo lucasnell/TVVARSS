@@ -50,3 +50,44 @@ The `test_files` folder contains the following files:
 The C++ implementation uses the "Armadillo" C++ library and interfaces with R using
 the packages `Rcpp` and `RcppArmadillo`.
 
+
+
+# Compiling
+
+You may get the following error message when running `Rcpp::sourceCpp('TVVARSS.cpp')`:
+
+```r
+ld: warning: directory not found for option '-L/usr/local/lib/gcc/x86_64-apple-darwin13.0.0/4.8.2'
+```
+
+### If homebrew is not installed
+
+You can install gfortran the following way in bash (i.e., in the Terminal app on macOS)
+([link to solution source](http://thecoatlessprofessor.com/programming/rcpp-rcpparmadillo-and-os-x-mavericks-lgfortran-and-lquadmath-error/)):
+
+```bash
+curl -O http://r.research.att.com/libs/gfortran-4.8.2-darwin13.tar.bz2
+sudo tar fvxz gfortran-4.8.2-darwin13.tar.bz2 -C /
+```
+
+### If homebrew is installed
+
+If you have homebrew installed, you'll have to do this instead
+([link to solution on StackOverflow](http://stackoverflow.com/a/35947039/5016095)):
+
+```bash
+brew reinstall gcc48 --with-fortran
+mkdir -p ~/.R
+printf "FLIBS=\"\"\nF77=\"gfortran-4.8\"\nFC=\"gfortran-4.8\"\n" >> ~/.R/Makevars
+```
+
+The ~/.R/Makevars file should look like this:
+
+```
+FLIBS=""
+F77="gfortran-4.8"
+FC="gfortran-4.8"
+```
+
+Now restart R.
+

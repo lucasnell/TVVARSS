@@ -25,6 +25,8 @@ X <- t(X)
 X[,1] <- (X[,1] - mean(X[,1]))/sd(X[,1])
 X[,2] <- (X[,2] - mean(X[,2]))/sd(X[,2])
 
+U <- matrix(U, ncol = 1)
+
 
 run_method <- function(method_type, language, seed = 1){
     # Standardizing language
@@ -78,4 +80,9 @@ names(R_out) <- c('Nelder-Mead', 'BFGS', 'bobyqa')
 
 # X is saved so I can show output from failed run of TVVARSS
 save(cpp_out, R_out, tv_t, X, file = './test_files/TVVARSS_testing.RData')
+
+
+
+
+
 
